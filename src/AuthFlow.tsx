@@ -1,4 +1,3 @@
-import { FontAwesome6 } from "@react-native-vector-icons/fontawesome6";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import React from "react";
@@ -10,7 +9,6 @@ import SignupScreen from "./features/auth/presentation/screens/SignupScreen";
 import AddProductScreen from "./features/products/presentation/screens/AddProductScreen";
 import ProductListScreen from "./features/products/presentation/screens/ProductListScreen";
 import UpdateProductScreen from "./features/products/presentation/screens/UpdateProductScreen";
-import SettingScreen from "./features/settings/SettingScreen";
 
 
 const Stack = createStackNavigator();
@@ -23,7 +21,7 @@ export default function AuthFlow() {
     return (
       <Tab.Navigator
         screenOptions={{
-          headerShown: true,
+          headerShown: false,
           headerTitle: "Auth demo with React Navigation",
           headerRight: () => (
             <IconButton icon="logout" onPress={() => logout()} />
@@ -33,6 +31,7 @@ export default function AuthFlow() {
             elevation: 0, // Remove shadow on Android
             shadowOpacity: 0, // Remove shadow on iOS
           },
+          tabBarStyle: { display: 'none' },
         }}
 
       >
@@ -40,19 +39,6 @@ export default function AuthFlow() {
           name="Home"
           component={ProductListScreen}
           options={{
-
-            tabBarIcon: ({ color }) => (
-              <FontAwesome6 name="house" size={24} color={color} iconStyle="solid" />
-            )
-          }}
-        />
-        <Tab.Screen
-          name="Profile"
-          component={SettingScreen}
-          options={{
-            tabBarIcon: ({ color }) => (
-              <FontAwesome6 name="user" size={24} color={color} />
-            )
           }}
         />
       </Tab.Navigator>
