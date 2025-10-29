@@ -20,7 +20,7 @@ import { SignupUseCase } from "../../domain/usecases/SignupUseCase";
 type AuthContextType = {
   isLoggedIn: boolean;
   user: AuthUser | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -48,11 +48,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   }, [getCurrentUserUseCase]);
 
-  const login = async (email: string, password: string) => {
-    const loggedInUser = await loginUseCase.execute(email, password);
-    setUser(loggedInUser);
+const login = async (email: string, password: string): Promise<boolean> => {
+  const success = await loginUseCase.execute(email, password);
+  if (success) {
+    const currentUser = await getCurrentUserUseCase.execute();
+    setUser(currentUser);
     setIsLoggedIn(true);
-  };
+  } else {
+    setUser(null);
+    setIsLoggedIn(false);
+  }
+  return success;
+};
+
 
   const signup = async (email: string, password: string) => {
     const newUser = await signupUseCase.execute(email, password);

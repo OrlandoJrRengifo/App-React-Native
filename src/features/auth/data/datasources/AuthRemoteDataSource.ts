@@ -1,7 +1,8 @@
+import { AuthUser } from "../../domain/entities/AuthUser";
 
 export interface AuthRemoteDataSource {
-  login(email: string, password: string): Promise<void>;
-  signUp(email: string, password: string): Promise<void>;
+  login(email: string, password: string): Promise<boolean>;
+  signUp(email: string, password: string): Promise<AuthUser>;
   logOut(): Promise<void>;
   validate(email: string, validationCode: string): Promise<boolean>;
   refreshToken(): Promise<boolean>;

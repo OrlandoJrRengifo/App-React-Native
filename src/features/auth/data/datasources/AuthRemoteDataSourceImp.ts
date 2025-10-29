@@ -1,5 +1,6 @@
 import { ILocalPreferences } from "@/src/core/iLocalPreferences";
 import { LocalPreferencesAsyncStorage } from "@/src/core/LocalPreferencesAsyncStorage";
+import { AuthUser } from "../../domain/entities/AuthUser";
 import { AuthRemoteDataSource } from "./AuthRemoteDataSource";
 
 export class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -17,7 +18,7 @@ export class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     this.prefs = LocalPreferencesAsyncStorage.getInstance();
   }
 
-  async login(email: string, password: string): Promise<void> {
+  async login(email: string, password: string): Promise<boolean> {
     try {
       const response = await fetch(`${this.baseUrl}/login`, {
         method: "POST",
@@ -32,7 +33,7 @@ export class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         await this.prefs.storeData("token", token);
         await this.prefs.storeData("refreshToken", refreshToken);
         console.log("Token:", token, "\nRefresh Token:", refreshToken);
-        return Promise.resolve();
+        return true;
       } else {
         const body = await response.json();
         throw new Error(`Login error: ${body.message}`);
@@ -43,9 +44,9 @@ export class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
-  async signUp(email: string, password: string): Promise<void> {
+  async signUp(email: string, password: string): Promise<AuthUser> {
     try {
-      const response = await fetch(`${this.baseUrl}/signup`, {
+      const response = await fetch(`${this.baseUrl}/signup-direct`, {
         method: "POST",
         headers: { "Content-Type": "application/json; charset=UTF-8" },
         body: JSON.stringify({
@@ -56,7 +57,8 @@ export class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       });
 
       if (response.status === 201) {
-        return Promise.resolve();
+        const data = await response.json();
+        return new AuthUser(data.id, data.email);
       } else {
         const body = await response.json();
         throw new Error(`Signup error: ${(body.message || []).join(" ")}`);
@@ -67,30 +69,34 @@ export class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
-  async logOut(): Promise<void> {
-    try {
-      const token = await this.prefs.retrieveData<string>("token");
-      if (!token) throw new Error("No token found");
+async logOut(): Promise<void> {
+  try {
+    const token = await this.prefs.retrieveData<string>("token");
+    if (!token) throw new Error("No token found");
 
-      const response = await fetch(`${this.baseUrl}/logout`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    const response = await fetch(`${this.baseUrl}/logout`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      if (response.status === 201) {
-        await this.prefs.removeData("token");
-        await this.prefs.removeData("refreshToken");
-        console.log("Logged out successfully");
-        return Promise.resolve();
-      } else {
-        const body = await response.json();
-        throw new Error(`Logout error: ${body.message}`);
-      }
-    } catch (e: any) {
-      console.error("Logout failed", e);
-      throw e;
+    if (response.status === 201) {
+      await this.prefs.removeData("token");
+      await this.prefs.removeData("refreshToken");
+      await this.prefs.removeData("savedEmail");
+      await this.prefs.removeData("savedPassword");
+      await this.prefs.removeData("rememberSession");
+      console.log("Logged out successfully");
+      return Promise.resolve();
+    } else {
+      const body = await response.json();
+      throw new Error(`Logout error: ${body.message}`);
     }
+  } catch (e: any) {
+    console.error("Logout failed", e);
+    throw e;
   }
+}
+
   async validate(email: string, validationCode: string): Promise<boolean> {
     try {
       const response = await fetch(`${this.baseUrl}/verify-email`, {
