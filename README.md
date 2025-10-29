@@ -30,3 +30,6 @@ This is a starter project for building React Native apps with [Expo](https://exp
 ## Functions
 - User authentication (login, logout, register) with Roble
 - Product management (create, update, delete) with Roble
+
+# Video Comparitvo
+- https://youtu.be/NB8QRlb0x60
