@@ -40,7 +40,7 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
         setPassword(savedPassword);
         setRememberMe(true);
         const success = await login(savedEmail.trim(), savedPassword);
-        if (success) navigation.replace("Dashboard");
+        if (success) navigation.replace("CourseDashboard");
       }
     }
   };
@@ -64,7 +64,7 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
           await AsyncStorage.setItem("remember_me", "false");
         }
         setShowSnack(true);
-        setTimeout(() => navigation.replace("Dashboard"), 800);
+        setTimeout(() => navigation.replace("CourseDashboard"), 800);
       } else {
         setError("Usuario o contraseña incorrectos");
       }

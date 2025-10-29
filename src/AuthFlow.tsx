@@ -7,10 +7,12 @@ import { IconButton } from "react-native-paper";
 import { useAuth } from "./features/auth/presentation/context/authContext";
 import LoginScreen from "./features/auth/presentation/screens/LoginScreen";
 import SignupScreen from "./features/auth/presentation/screens/SignupScreen";
+import CourseDashboard from "./features/courses/presentation/screens/CourseDashboard";
 import AddProductScreen from "./features/products/presentation/screens/AddProductScreen";
 import ProductListScreen from "./features/products/presentation/screens/ProductListScreen";
 import UpdateProductScreen from "./features/products/presentation/screens/UpdateProductScreen";
 import SettingScreen from "./features/settings/SettingScreen";
+
 
 
 const Stack = createStackNavigator();
@@ -64,6 +66,13 @@ export default function AuthFlow() {
       {isLoggedIn ? (
         <>
           <Stack.Screen name="App" component={ContentTabs} />
+          <Stack.Screen
+            name="CourseDashboard"
+            component={CourseDashboard}
+            options={{
+              headerShown: false,
+            }}
+          />
           <Stack.Screen
             name="AddProductScreen"
             component={AddProductScreen}

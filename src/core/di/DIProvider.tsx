@@ -8,6 +8,9 @@ import { GetCurrentUserUseCase } from "@/src/features/auth/domain/usecases/GetCu
 import { LoginUseCase } from "@/src/features/auth/domain/usecases/LoginUseCase";
 import { LogoutUseCase } from "@/src/features/auth/domain/usecases/LogoutUseCase";
 import { SignupUseCase } from "@/src/features/auth/domain/usecases/SignupUseCase";
+import { CourseRemoteDataSourceImp } from "@/src/features/courses/data/datasources/CourseRemoteDataSourceImp";
+import { CourseRepositoryImpl } from "@/src/features/courses/data/repositories/CourseRepositoryImpl";
+import CourseUseCases from "@/src/features/courses/domain/usecases/CourseUseCase";
 import { ProductRemoteDataSourceImp } from "@/src/features/products/data/datasources/ProductRemoteDataSourceImp";
 import { ProductRepositoryImpl } from "@/src/features/products/data/repositories/ProductRepositoryImpl";
 import { AddProductUseCase } from "@/src/features/products/domain/usecases/AddProductUseCase";
@@ -16,6 +19,7 @@ import { GetProductByIdUseCase } from "@/src/features/products/domain/usecases/G
 import { GetProductsUseCase } from "@/src/features/products/domain/usecases/GetProductsUseCase";
 import { UpdateProductUseCase } from "@/src/features/products/domain/usecases/UpdateProductUseCase";
 import { Container } from "./container";
+
 
 const DIContext = createContext<Container | null>(null);
 
@@ -45,9 +49,37 @@ export function DIProvider({ children }: { children: React.ReactNode }) {
             .register(TOKENS.GetProductsUC, new GetProductsUseCase(productRepo))
             .register(TOKENS.GetProductByIdUC, new GetProductByIdUseCase(productRepo));
 
+        const courseDS = new CourseRemoteDataSourceImp(authDS);
+        const courseRepo = new CourseRepositoryImpl(courseDS);
 
+        console.log("🔍 CourseUseCases completo:", CourseUseCases);
+        console.log("🔍 CreateCourseUseCase:", CourseUseCases.CreateCourseUseCase);
 
+        const {
+            CanCreateMoreCoursesUseCase,
+            CreateCourseUseCase,
+            DeleteCourseUseCase,
+            GetCourseByCodeUseCase,
+            GetCourseByIdUseCase,
+            ListCoursesByTeacherUseCase,
+            LoadCoursesByIdsUseCase,
+            UpdateCourseUseCase,
+        } = CourseUseCases;
+        
+        console.log("🔍 CreateCourseUseCase desestructurado:", CreateCourseUseCase);
+
+        c.register(TOKENS.CourseRemoteDS, courseDS)
+            .register((TOKENS as any).CourseRepo, courseRepo)
+            .register(TOKENS.CreateCourseUC, new CreateCourseUseCase(courseRepo))
+            .register(TOKENS.UpdateCourseUC, new UpdateCourseUseCase(courseRepo))
+            .register(TOKENS.DeleteCourseUC, new DeleteCourseUseCase(courseRepo))
+            .register(TOKENS.GetCourseByIdUC, new GetCourseByIdUseCase(courseRepo))
+            .register(TOKENS.GetCourseByCodeUC, new GetCourseByCodeUseCase(courseRepo))
+            .register(TOKENS.ListCoursesByTeacherUC, new ListCoursesByTeacherUseCase(courseRepo))
+            .register(TOKENS.CanCreateMoreCoursesUC, new CanCreateMoreCoursesUseCase(courseRepo))
+            .register(TOKENS.LoadCoursesByIdsUC, new LoadCoursesByIdsUseCase(courseRepo));
         return c;
+
     }, []);
 
     return <DIContext.Provider value={container}>{children}</DIContext.Provider>;

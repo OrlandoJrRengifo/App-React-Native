@@ -1,4 +1,3 @@
-// src/context/productContext.tsx
 import React, {
   createContext,
   ReactNode,
