@@ -1,6 +1,7 @@
 import { AuthUser } from "../../domain/entities/AuthUser";
 import { AuthRepository } from "../../domain/repositories/AuthRepository";
 import { AuthRemoteDataSource } from "../datasources/AuthRemoteDataSource";
+import { AuthRemoteDataSourceImpl } from "../datasources/AuthRemoteDataSourceImp";
 
 export class AuthRepositoryImpl implements AuthRepository {
   private dataSource: AuthRemoteDataSource;
@@ -10,19 +11,21 @@ export class AuthRepositoryImpl implements AuthRepository {
   }
 
   async login(email: string, password: string): Promise<boolean> {
-    return this.dataSource.login(email, password);
+    const result = await this.dataSource.login(email, password);
+    return result;
   }
 
   async signup(email: string, password: string): Promise<AuthUser> {
-    return this.dataSource.signUp(email, password);
+    const result = await this.dataSource.signUp(email, password);
+    return result;
   }
 
   async logout(): Promise<void> {
-    return this.dataSource.logOut();
+    await this.dataSource.logOut();
   }
 
   async getCurrentUser(): Promise<AuthUser | null> {
-   // return this.dataSource.getCurrentUser();
-    return null;
+    const user = await (this.dataSource as AuthRemoteDataSourceImpl).getAuthUserFromToken();
+    return user;
   }
 }

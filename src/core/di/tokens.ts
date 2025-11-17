@@ -1,16 +1,28 @@
 export const TOKENS = {
-  AuthRemoteDS: Symbol("AuthRemoteDS"),
-  AuthRepo: Symbol("AuthRepo"),
-  LoginUC: Symbol("LoginUC"),
-  SignupUC: Symbol("SignupUC"),
-  LogoutUC: Symbol("LogoutUC"),
-  GetCurrentUserUC: Symbol("GetCurrentUserUC"),
-  ProductRemoteDS: Symbol("ProductRemoteDS"),
-  ProductRepo: Symbol("ProductRepo"),
-  AddProductUC: Symbol("AddProductUC"),
-  UpdateProductUC: Symbol("UpdateProductUC"),
-  DeleteProductUC: Symbol("DeleteProductUC"),
-  GetProductsUC: Symbol("GetProductsUC"),
-  GetProductByIdUC: Symbol("GetProductByIdUC"),
-  // Add Product tokens if you want to DI those too...
+  LocalPrefs: Symbol("LocalPrefs"),
+
+  // --- AUTH ---
+  AuthRemoteDS: Symbol("AuthRemoteDS"),
+  AuthRepo: Symbol("AuthRepo"),
+  LoginUC: Symbol("LoginUC"),
+  SignupUC: Symbol("SignupUC"),
+  LogoutUC: Symbol("LogoutUC"),
+  GetCurrentUserUC: Symbol("GetCurrentUserUC"),
+
+  // --- COURSE ---
+  CourseRemoteDS: Symbol("CourseRemoteDS"),
+  CourseRepo: Symbol("CourseRepo"),
+  
+  CreateCourseUC: Symbol("CreateCourseUC"),
+  UpdateCourseUC: Symbol("UpdateCourseUC"),
+  DeleteCourseUC: Symbol("DeleteCourseUC"),
+  ListCoursesByTeacherUC: Symbol("ListCoursesByTeacherUC"),
+  GetCourseByIdUC: Symbol("GetCourseByIdUC"),
+  GetCourseByCodeUC: Symbol("GetCourseByCodeUC"),
+  CanCreateMoreUC: Symbol("CanCreateMoreUC"),
+  
+  // --- USER_COURSES (Inscripciones) ---
+  UserCourseRepo: Symbol("UserCourseRepo"),
+  EnrollUserUC: Symbol("EnrollUserUC"), 
+  GetUserCoursesUC: Symbol("GetUserCoursesUC"), 
 } as const;

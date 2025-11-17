@@ -9,14 +9,6 @@ import { LogoutUseCase } from "../../domain/usecases/LogoutUseCase";
 import { SignupUseCase } from "../../domain/usecases/SignupUseCase";
 
 
-// const authRemoteDataSource = new AuthRemoteDataSourceImpl();
-// const repository = new AuthRepositoryImpl(authRemoteDataSource);
-
-// const loginUseCase = new LoginUseCase(repository);
-// const signupUseCase = new SignupUseCase(repository);
-// const logoutUseCase = new LogoutUseCase(repository);
-// const getCurrentUserUseCase = new GetCurrentUserUseCase(repository);
-
 type AuthContextType = {
   isLoggedIn: boolean;
   user: AuthUser | null;

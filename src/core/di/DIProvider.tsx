@@ -8,53 +8,84 @@ import { GetCurrentUserUseCase } from "@/src/features/auth/domain/usecases/GetCu
 import { LoginUseCase } from "@/src/features/auth/domain/usecases/LoginUseCase";
 import { LogoutUseCase } from "@/src/features/auth/domain/usecases/LogoutUseCase";
 import { SignupUseCase } from "@/src/features/auth/domain/usecases/SignupUseCase";
-import { ProductRemoteDataSourceImp } from "@/src/features/products/data/datasources/ProductRemoteDataSourceImp";
-import { ProductRepositoryImpl } from "@/src/features/products/data/repositories/ProductRepositoryImpl";
-import { AddProductUseCase } from "@/src/features/products/domain/usecases/AddProductUseCase";
-import { DeleteProductUseCase } from "@/src/features/products/domain/usecases/DeleteProductUseCase";
-import { GetProductByIdUseCase } from "@/src/features/products/domain/usecases/GetProductByIdUseCase";
-import { GetProductsUseCase } from "@/src/features/products/domain/usecases/GetProductsUseCase";
-import { UpdateProductUseCase } from "@/src/features/products/domain/usecases/UpdateProductUseCase";
 import { Container } from "./container";
+
+// Importaciones corregidas y añadidas para las preferencias locales:
+import { ILocalPreferences } from "@/src/core/iLocalPreferences";
+import { LocalPreferencesAsyncStorage } from "@/src/core/LocalPreferencesAsyncStorage";
+
+// --- CLASES CONCRETAS NECESARIAS PARA CURSOS ---
+import { CourseRobleDataSource } from "@/src/features/courses/data/datasources/CourseRobleDataSource";
+import { CourseRepository } from "@/src/features/courses/data/repositories/CourseRepository";
+import { CourseUseCases } from "@/src/features/courses/domain/usecases/CourseUseCases";
+// -------------------------------------------------
+
 
 const DIContext = createContext<Container | null>(null);
 
 export function DIProvider({ children }: { children: React.ReactNode }) {
-    //useMemo is a React Hook that lets you cache the result of a calculation between re-renders.
-    const container = useMemo(() => {
-        const c = new Container();
+    // useMemo asegura que la creación del contenedor solo se ejecute una vez
+    const container = useMemo(() => {
+        const c = new Container();
 
-        const authDS = new AuthRemoteDataSourceImpl();
-        const authRepo = new AuthRepositoryImpl(authDS);
-
-        c.register(TOKENS.AuthRemoteDS, authDS)
-            .register(TOKENS.AuthRepo, authRepo)
-            .register(TOKENS.LoginUC, new LoginUseCase(authRepo))
-            .register(TOKENS.SignupUC, new SignupUseCase(authRepo))
-            .register(TOKENS.LogoutUC, new LogoutUseCase(authRepo))
-            .register(TOKENS.GetCurrentUserUC, new GetCurrentUserUseCase(authRepo));
-
-
-        const remoteDS = new ProductRemoteDataSourceImp(authDS);
-        const productRepo = new ProductRepositoryImpl(remoteDS);
-
-        c.register(TOKENS.ProductRemoteDS, remoteDS)
-            .register(TOKENS.ProductRepo, productRepo).register(TOKENS.AddProductUC, new AddProductUseCase(productRepo))
-            .register(TOKENS.UpdateProductUC, new UpdateProductUseCase(productRepo))
-            .register(TOKENS.DeleteProductUC, new DeleteProductUseCase(productRepo))
-            .register(TOKENS.GetProductsUC, new GetProductsUseCase(productRepo))
-            .register(TOKENS.GetProductByIdUC, new GetProductByIdUseCase(productRepo));
+        // =======================================================
+        // 0. REGISTRO CORE: LOCAL PREFERENCES (DEBE IR PRIMERO)
+        // Esto soluciona el error "No provider for Symbol(LocalPrefs)"
+        // =======================================================
+        const localPrefsInstance = LocalPreferencesAsyncStorage.getInstance();
+        c.register(TOKENS.LocalPrefs, localPrefsInstance);
+        
+        // Resolvemos la instancia para usarla en los siguientes constructores
+        const prefs = c.resolve(TOKENS.LocalPrefs) as ILocalPreferences;
 
 
+        // ==========================================
+        // 1. REGISTROS DE AUTH
+        // ==========================================
+        const authDS = new AuthRemoteDataSourceImpl();
+        const authRepo = new AuthRepositoryImpl(authDS);
 
-        return c;
-    }, []);
+        c.register(TOKENS.AuthRemoteDS, authDS)
+            .register(TOKENS.AuthRepo, authRepo)
+            .register(TOKENS.LoginUC, new LoginUseCase(authRepo))
+            .register(TOKENS.SignupUC, new SignupUseCase(authRepo))
+            .register(TOKENS.LogoutUC, new LogoutUseCase(authRepo))
+            .register(TOKENS.GetCurrentUserUC, new GetCurrentUserUseCase(authRepo));
 
-    return <DIContext.Provider value={container}>{children}</DIContext.Provider>;
+
+        // ==========================================
+        // 2. REGISTROS DE CURSOS 
+        // ==========================================
+        
+        // Crear DataSource (necesita 'prefs' ya resuelta y registrada)
+        const courseDS = new CourseRobleDataSource(prefs); 
+        
+        // Crear Repository
+        const courseRepo = new CourseRepository(courseDS);
+        
+        // Instancia única de la clase contenedora de Casos de Uso
+        const courseUCInstance = new CourseUseCases(courseRepo);
+
+        c.register(TOKENS.CourseRemoteDS, courseDS)
+            .register(TOKENS.CourseRepo, courseRepo)
+            
+            // Registramos las funciones individuales usando .bind() para mantener el contexto 'this'
+            .register(TOKENS.CreateCourseUC, courseUCInstance.createCourse.bind(courseUCInstance))
+            .register(TOKENS.UpdateCourseUC, courseUCInstance.updateCourse.bind(courseUCInstance))
+            .register(TOKENS.DeleteCourseUC, courseUCInstance.deleteCourse.bind(courseUCInstance))
+            .register(TOKENS.ListCoursesByTeacherUC, courseUCInstance.listCoursesByTeacher.bind(courseUCInstance))
+            .register(TOKENS.GetCourseByIdUC, courseUCInstance.getCourse.bind(courseUCInstance))
+            .register(TOKENS.GetCourseByCodeUC, courseUCInstance.getCourseByCode.bind(courseUCInstance))
+            .register(TOKENS.CanCreateMoreUC, courseUCInstance.canCreateMore.bind(courseUCInstance));
+
+        return c;
+    }, []);
+
+    return <DIContext.Provider value={container}>{children}</DIContext.Provider>;
 }
 
 export function useDI() {
-    const c = useContext(DIContext);
-    if (!c) throw new Error("DIProvider missing");
-    return c;
+    const c = useContext(DIContext);
+    if (!c) throw new Error("DIProvider missing");
+    return c;
 }

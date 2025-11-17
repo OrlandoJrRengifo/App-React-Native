@@ -1,75 +1,44 @@
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import React from "react";
-import { IconButton } from "react-native-paper";
 
 import { useAuth } from "./features/auth/presentation/context/authContext";
 import LoginScreen from "./features/auth/presentation/screens/LoginScreen";
 import SignupScreen from "./features/auth/presentation/screens/SignupScreen";
-import AddProductScreen from "./features/products/presentation/screens/AddProductScreen";
-import ProductListScreen from "./features/products/presentation/screens/ProductListScreen";
-import UpdateProductScreen from "./features/products/presentation/screens/UpdateProductScreen";
+// Importamos el CourseDashboard, asumiendo esta ruta
+import { CourseDashboardScreen } from "./features/courses/presentation/screens/CourseDashboard";
 
 
 const Stack = createStackNavigator();
-const Tab = createBottomTabNavigator();
 
 export default function AuthFlow() {
   const { isLoggedIn, logout } = useAuth();
 
-  function ContentTabs() {
+  // Componente que maneja la vista después del login
+  function MainAppStack() {
     return (
-      <Tab.Navigator
+      <Stack.Navigator
         screenOptions={{
           headerShown: false,
-          headerTitle: "Auth demo with React Navigation",
-          headerRight: () => (
-            <IconButton icon="logout" onPress={() => logout()} />
-          ),
-          headerTitleAlign: "left",
-          headerStyle: {
-            elevation: 0, // Remove shadow on Android
-            shadowOpacity: 0, // Remove shadow on iOS
-          },
-          tabBarStyle: { display: 'none' },
+          // Puedes configurar un Appbar aquí si no lo haces en el Dashboard
         }}
-
       >
-        <Tab.Screen
-          name="Home"
-          component={ProductListScreen}
-          options={{
-          }}
+        {/* La pantalla principal después del login es el Dashboard de Cursos */}
+        <Stack.Screen 
+          name="CourseDashboard" 
+          component={CourseDashboardScreen} 
         />
-      </Tab.Navigator>
+        {/* Aquí irían otras pantallas relacionadas con cursos, si las hubiera (ej: detalle de curso) */}
+      </Stack.Navigator>
     );
   }
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isLoggedIn ? (
-        <>
-          <Stack.Screen name="App" component={ContentTabs} />
-          <Stack.Screen
-            name="AddProductScreen"
-            component={AddProductScreen}
-            options={{
-              title: "Add Product",
-              headerShown: true,
-              presentation: 'modal' // Optional: makes it slide up from bottom
-            }}
-          />
-          <Stack.Screen
-            name="UpdateProductScreen"
-            component={UpdateProductScreen}
-            options={{
-              title: "Update Product",
-              headerShown: true,
-              presentation: 'modal' // Optional: makes it slide up from bottom
-            }}
-          />
-        </>
+        // Si está logueado, ve al flujo principal de la aplicación (Dashboard)
+        <Stack.Screen name="App" component={MainAppStack} />
       ) : (
+        // Si no está logueado, ve a Login/Signup
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Signup" component={SignupScreen} />
