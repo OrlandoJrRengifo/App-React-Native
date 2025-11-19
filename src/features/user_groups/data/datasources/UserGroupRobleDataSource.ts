@@ -152,22 +152,26 @@ export class UserGroupRobleDataSource extends UserGroupDataSource {
     const session = await getAuthSessionData();
     if (!session?.token) throw new Error('No autenticado');
 
-    const body = {
-      user_id: userGroup.userId,
-      group_id: userGroup.groupId,
+    const bodyPayload = {
+      tableName: 'user_groups',
+      records: [
+        {
+          user_id: userGroup.userId,
+          group_id: userGroup.groupId,
+        },
+      ],
     };
 
-    const url = `${BASE_URL}/user_groups`;
-    console.log('📡 POST:', url, body);
+    const url = `${BASE_URL}/insert`;
+    console.log('📡 POST:', url, bodyPayload);
 
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${session.token}`,
         'Content-Type': 'application/json',
-        Prefer: 'return=representation',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(bodyPayload),
     });
 
     if (!response.ok) {
@@ -178,7 +182,12 @@ export class UserGroupRobleDataSource extends UserGroupDataSource {
 
     const data = await response.json();
     console.log('✅ Inscripción creada:', data);
-    return UserGroup.fromJson(data[0]);
+    
+    if (data['inserted'] && data['inserted'].length > 0) {
+      return UserGroup.fromJson(data['inserted'][0]);
+    }
+    
+    throw new Error('No se pudo crear la inscripción');
   }
 
   async deleteUserGroup(id: string): Promise<void> {
@@ -186,14 +195,14 @@ export class UserGroupRobleDataSource extends UserGroupDataSource {
     const session = await getAuthSessionData();
     if (!session?.token) throw new Error('No autenticado');
 
-    const url = `${BASE_URL}/user_groups`;
-    const body = {
+    const bodyPayload = {
       tableName: 'user_groups',
       idColumn: '_id',
       idValue: id,
     };
 
-    console.log('📡 DELETE:', url, body);
+    const url = `${BASE_URL}/delete`;
+    console.log('📡 DELETE:', url, bodyPayload);
 
     const response = await fetch(url, {
       method: 'DELETE',
@@ -201,7 +210,7 @@ export class UserGroupRobleDataSource extends UserGroupDataSource {
         Authorization: `Bearer ${session.token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(bodyPayload),
     });
 
     if (!response.ok) {
