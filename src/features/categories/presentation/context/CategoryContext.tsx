@@ -4,9 +4,9 @@
 import { useDI } from '@/src/core/di/DIProvider';
 import { TOKENS } from '@/src/core/di/tokens';
 import React, { createContext, ReactNode, useContext, useState } from 'react';
+import { CreateCategoryWithGroupsUseCase } from '../../../groups/domain/usecases/CreateCategoryWithGroupsUseCase';
 import { Category, GroupingMethod } from '../../domain/entities/Category';
 import { CategoryUseCases } from '../../domain/usecases/CategoryUseCases';
-import { CreateCategoryWithGroupsUseCase } from '../../../groups/domain/usecases/CreateCategoryWithGroupsUseCase';
 
 interface ICategoryContext {
   categories: Category[];

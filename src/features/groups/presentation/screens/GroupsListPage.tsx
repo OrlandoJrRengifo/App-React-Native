@@ -1,14 +1,14 @@
 /**
  * @fileoverview Pantalla que muestra la lista de grupos de una categoría.
  */
+import { useAuth } from '@/src/features/auth/presentation/context/authContext';
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Button, Dialog, FAB, Portal, Text } from 'react-native-paper';
-import { useAuth } from '@/src/features/auth/presentation/context/authContext';
 import { Group } from '../../domain/entities/Group';
-import { useGroups } from '../context/GroupContext';
 import { GroupCard } from '../components/GroupCard';
 import { GroupFormData, GroupFormDialog } from '../components/GroupFormDialog';
+import { useGroups } from '../context/GroupContext';
 
 interface GroupsListPageProps {
   categoryId: string;

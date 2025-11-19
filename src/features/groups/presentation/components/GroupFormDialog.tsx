@@ -2,7 +2,7 @@
  * @fileoverview Diálogo para crear/editar grupos.
  */
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { Button, Dialog, Portal, Text, TextInput } from 'react-native-paper';
 import { Group } from '../../domain/entities/Group';
 

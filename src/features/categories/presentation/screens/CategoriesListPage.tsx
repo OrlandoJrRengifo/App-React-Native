@@ -2,6 +2,7 @@
  * @fileoverview Pantalla que muestra la lista de categorías de un curso.
  */
 import { useAuth } from '@/src/features/auth/presentation/context/authContext';
+import { GroupsListPage } from '@/src/features/groups/presentation/screens/GroupsListPage';
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Button, Dialog, FAB, Portal, Text } from 'react-native-paper';
@@ -9,7 +10,6 @@ import { Category } from '../../domain/entities/Category';
 import { CategoryCard } from '../components/CategoryCard';
 import { CategoryFormData, CategoryFormDialog } from '../components/CategoryFormDialog';
 import { useCategories } from '../context/CategoryContext';
-import { GroupsListPage } from '@/src/features/groups/presentation/screens/GroupsListPage';
 
 interface CategoriesListPageProps {
   courseId: string;

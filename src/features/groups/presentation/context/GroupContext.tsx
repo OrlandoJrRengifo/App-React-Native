@@ -1,9 +1,9 @@
 /**
  * @fileoverview Context para manejar el estado de los grupos.
  */
-import React, { createContext, ReactNode, useContext, useState } from 'react';
 import { useDI } from '@/src/core/di/DIProvider';
 import { TOKENS } from '@/src/core/di/tokens';
+import React, { createContext, ReactNode, useContext, useState } from 'react';
 import { Group } from '../../domain/entities/Group';
 import { GroupUseCases } from '../../domain/usecases/GroupUseCases';
 

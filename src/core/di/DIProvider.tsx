@@ -40,8 +40,8 @@ import { CategoryUseCases } from "@/src/features/categories/domain/usecases/Cate
 // --- CLASES CONCRETAS NECESARIAS PARA GROUPS ---
 import { GroupRobleDataSource } from "@/src/features/groups/data/datasources/GroupRobleDataSource";
 import { GroupRepositoryImpl } from "@/src/features/groups/data/repositories/GroupRepositoryImpl";
-import { GroupUseCases } from "@/src/features/groups/domain/usecases/GroupUseCases";
 import { CreateCategoryWithGroupsUseCase } from "@/src/features/groups/domain/usecases/CreateCategoryWithGroupsUseCase";
+import { GroupUseCases } from "@/src/features/groups/domain/usecases/GroupUseCases";
 // ---------------------------------------------------
 
 

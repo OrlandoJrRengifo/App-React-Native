@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Card, IconButton, Menu, Text, Chip } from 'react-native-paper';
+import { Card, Chip, IconButton, Menu, Text } from 'react-native-paper';
 import { Group } from '../../domain/entities/Group';
 
 interface GroupCardProps {

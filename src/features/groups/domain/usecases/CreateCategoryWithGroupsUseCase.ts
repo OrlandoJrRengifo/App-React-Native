@@ -3,9 +3,9 @@
  */
 import { Category, GroupingMethod } from '../../../categories/domain/entities/Category';
 import { ICategoryRepository } from '../../../categories/domain/repositories/ICategoryRepository';
-import { IGroupRepository } from '../repositories/IGroupRepository';
-import { Group } from '../entities/Group';
 import { UserCourseRepository } from '../../../user_courses/domain/repositories/UserCourseRepository';
+import { Group } from '../entities/Group';
+import { IGroupRepository } from '../repositories/IGroupRepository';
 
 export class CreateCategoryWithGroupsUseCase {
   constructor(
