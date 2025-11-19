@@ -44,6 +44,12 @@ import { CreateCategoryWithGroupsUseCase } from "@/src/features/groups/domain/us
 import { GroupUseCases } from "@/src/features/groups/domain/usecases/GroupUseCases";
 // ---------------------------------------------------
 
+// --- CLASES CONCRETAS NECESARIAS PARA USER_GROUPS ---
+import { UserGroupRobleDataSource } from "@/src/features/user_groups/data/datasources/UserGroupRobleDataSource";
+import { UserGroupRepositoryImpl } from "@/src/features/user_groups/data/repositories/UserGroupRepositoryImpl";
+import { UserGroupUseCases } from "@/src/features/user_groups/domain/usecases/UserGroupUseCases";
+// ---------------------------------------------------
+
 
 const DIContext = createContext<Container | null>(null);
 
@@ -146,6 +152,17 @@ export function DIProvider({ children }: { children: React.ReactNode }) {
             userCourseRepo
         );
         c.register(TOKENS.CreateCategoryWithGroupsUC, createCategoryWithGroupsUC);
+
+        // ==========================================
+        // 6. REGISTROS DE USER_GROUPS
+        // ==========================================
+        const userGroupDS = new UserGroupRobleDataSource();
+        const userGroupRepo = new UserGroupRepositoryImpl(userGroupDS);
+        const userGroupUseCases = new UserGroupUseCases(userGroupRepo, groupRepo);
+
+        c.register(TOKENS.UserGroupDataSource, userGroupDS)
+            .register(TOKENS.UserGroupRepo, userGroupRepo)
+            .register(TOKENS.UserGroupUseCases, userGroupUseCases);
 
         return c;
     }, []);

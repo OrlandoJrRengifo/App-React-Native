@@ -40,6 +40,11 @@ export class GroupRepositoryImpl implements IGroupRepository {
     return this.dataSource.getGroup(id);
   }
 
+  getGroupById(id: string): Promise<Group | null> {
+    console.log('-> GroupRepository: Getting group by id (alias).');
+    return this.getGroup(id);
+  }
+
   getHighestNumerationByCategory(categoryId: string): Promise<number> {
     console.log('-> GroupRepository: Getting highest numeration.');
     return this.dataSource.getHighestNumerationByCategory(categoryId);

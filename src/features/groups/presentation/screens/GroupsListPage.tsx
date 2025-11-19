@@ -8,6 +8,7 @@ import { ActivityIndicator, Button, Dialog, FAB, Portal, Text } from 'react-nati
 import { Group } from '../../domain/entities/Group';
 import { GroupCard } from '../components/GroupCard';
 import { GroupFormData, GroupFormDialog } from '../components/GroupFormDialog';
+import { GroupMembersDialog } from '../components/GroupMembersDialog';
 import { useGroups } from '../context/GroupContext';
 
 interface GroupsListPageProps {
@@ -29,8 +30,10 @@ export const GroupsListPage = ({
 
   const [formVisible, setFormVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
+  const [membersDialogVisible, setMembersDialogVisible] = useState(false);
   const [groupToEdit, setGroupToEdit] = useState<Group | undefined>(undefined);
   const [groupToDelete, setGroupToDelete] = useState<Group | undefined>(undefined);
+  const [groupToView, setGroupToView] = useState<Group | null>(null);
 
   // Verificar si el usuario actual es el profesor del curso
   const isTeacher = user?.id === teacherId;
@@ -58,6 +61,16 @@ export const GroupsListPage = ({
   const openDeleteDialog = (group: Group) => {
     setGroupToDelete(group);
     setDeleteVisible(true);
+  };
+
+  const openMembersDialog = (group: Group) => {
+    setGroupToView(group);
+    setMembersDialogVisible(true);
+  };
+
+  const handleEnrollmentChange = () => {
+    // Recargar la lista cuando hay cambios en inscripciones
+    loadGroupsByCategory(categoryId);
   };
 
   const handleFormSubmit = async (data: GroupFormData) => {
@@ -150,9 +163,12 @@ export const GroupsListPage = ({
         renderItem={({ item }) => (
           <GroupCard
             group={item}
+            categoryId={categoryId}
             onEdit={isTeacher ? openEditForm : undefined}
             onDelete={isTeacher ? openDeleteDialog : undefined}
+            onViewMembers={openMembersDialog}
             isTeacher={isTeacher}
+            onEnrollmentChange={handleEnrollmentChange}
           />
         )}
         contentContainerStyle={styles.listContent}
@@ -168,6 +184,12 @@ export const GroupsListPage = ({
         onSubmit={handleFormSubmit}
         group={groupToEdit}
         defaultCapacity={maxGroupSize}
+      />
+
+      <GroupMembersDialog
+        visible={membersDialogVisible}
+        group={groupToView}
+        onDismiss={() => setMembersDialogVisible(false)}
       />
 
       <Portal>

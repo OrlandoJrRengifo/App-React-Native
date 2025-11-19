@@ -1,8 +1,9 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Appbar, Button, Dialog, Portal, Snackbar, Text } from 'react-native-paper';
+import { ActivityIndicator, Appbar, Button, Dialog, Portal, Snackbar, Text, useTheme } from 'react-native-paper';
 import { SceneMap, TabBar, TabView } from 'react-native-tab-view';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../../auth/presentation/context/authContext';
 import { useUserCourse } from '../../../user_courses/presentation/context/UserCourseContext';
 import { Course } from '../../domain/entities/Course';
@@ -247,6 +248,7 @@ const EnrolledTab = () => {
 export const CourseDashboardScreen = () => {
   const navigation = useNavigation<any>();
   const { logout } = useAuth();
+  const theme = useTheme();
 
   const [index, setIndex] = React.useState(0);
   const [routes] = React.useState([
@@ -264,18 +266,29 @@ export const CourseDashboardScreen = () => {
   };
 
   return (
-    <>
-      <Appbar.Header>
-        <Appbar.Content title="JC Academy" />
-        <Button mode="text" onPress={handleLogout} color="red">Salir</Button>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
+        <MaterialCommunityIcons name="school" size={28} color="#fff" style={{ marginLeft: 16 }} />
+        <Appbar.Content title="JC Academy" titleStyle={{ color: '#fff', fontWeight: 'bold' }} />
+        <Button mode="text" onPress={handleLogout} textColor="#fff">
+          Salir
+        </Button>
       </Appbar.Header>
       <TabView
         navigationState={{ index, routes }}
         renderScene={renderScene}
         onIndexChange={setIndex}
-        renderTabBar={props => <TabBar {...props} />}
+        renderTabBar={props => (
+          <TabBar 
+            {...props} 
+            indicatorStyle={{ backgroundColor: theme.colors.primary }}
+            style={{ backgroundColor: theme.colors.surface }}
+            activeColor={theme.colors.primary}
+            inactiveColor={theme.colors.onSurfaceVariant}
+          />
+        )}
       />
-    </>
+    </View>
   );
 };
 

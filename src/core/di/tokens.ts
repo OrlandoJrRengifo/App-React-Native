@@ -39,4 +39,15 @@ export const TOKENS = {
   GroupRepo: Symbol("GroupRepo"),
   GroupUseCases: Symbol("GroupUseCases"),
   CreateCategoryWithGroupsUC: Symbol("CreateCategoryWithGroupsUC"),
+
+  // --- USER_GROUPS ---
+  UserGroupDataSource: Symbol("UserGroupDataSource"),
+  UserGroupRepo: Symbol("UserGroupRepo"),
+  UserGroupUseCases: Symbol("UserGroupUseCases"),
 } as const;
+
+export const FakeUserRepoToken = TOKENS.FakeUserRepo;
+
+export const UserGroupDataSourceToken = TOKENS.UserGroupDataSource;
+export const UserGroupRepoToken = TOKENS.UserGroupRepo;
+export const UserGroupUseCasesToken = TOKENS.UserGroupUseCases;
