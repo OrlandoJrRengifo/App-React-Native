@@ -14,8 +14,7 @@ export class FakeUserRobleSource implements IFakeUserSource {
     if (!projectId) {
       throw new Error("Missing EXPO_PUBLIC_ROBLE_PROJECT_ID env var for Roble DB");
     }
-    // El ID de la base de datos (364931dc19) estaba codificado en el Flutter, lo replicamos:
-    this.baseUrl = `https://roble-api.openlab.uninorte.edu.co/database/database_364931dc19`;
+    this.baseUrl = `https://roble-api.openlab.uninorte.edu.co/database/${projectId}`;
   }
 
   private async getToken(): Promise<string> {

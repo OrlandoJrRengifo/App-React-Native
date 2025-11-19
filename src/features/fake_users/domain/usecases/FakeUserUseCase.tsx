@@ -18,7 +18,6 @@ export class FakeUserUseCase {
   }
 
   async getUsersByIds(ids: string[]): Promise<FakeUser[]> {
-    // console.log("📡 UseCase.getUsersByIds con", ids);
     return this.repository.getUsersByIds(ids);
   }
 

@@ -1,19 +1,20 @@
 export const TOKENS = {
-  LocalPrefs: Symbol("LocalPrefs"),
+  LocalPrefs: Symbol("LocalPrefs"),
 
-  // --- AUTH ---
-  AuthRemoteDS: Symbol("AuthRemoteDS"),
-  AuthRepo: Symbol("AuthRepo"),
-  LoginUC: Symbol("LoginUC"),
-  SignupUC: Symbol("SignupUC"),
-  LogoutUC: Symbol("LogoutUC"),
-  GetCurrentUserUC: Symbol("GetCurrentUserUC"),
+  // --- AUTH ---
+  AuthRemoteDS: Symbol("AuthRemoteDS"),
+  AuthRepo: Symbol("AuthRepo"),
+  LoginUC: Symbol("LoginUC"),
+  SignupUC: Symbol("SignupUC"),
+  LogoutUC: Symbol("LogoutUC"),
+  GetCurrentUserUC: Symbol("GetCurrentUserUC"),
 
-  // --- COURSE ---
-  CourseRemoteDS: Symbol("CourseRemoteDS"),
-  CourseRepo: Symbol("CourseRepo"),
-  
-  CreateCourseUC: Symbol("CreateCourseUC"),
+  // --- FAKE_USERS ---
+  FakeUserRepo: Symbol("FakeUserRepo"),
+
+  // --- COURSE ---
+  CourseRemoteDS: Symbol("CourseRemoteDS"),
+  CourseRepo: Symbol("CourseRepo"),  CreateCourseUC: Symbol("CreateCourseUC"),
   UpdateCourseUC: Symbol("UpdateCourseUC"),
   DeleteCourseUC: Symbol("DeleteCourseUC"),
   ListCoursesByTeacherUC: Symbol("ListCoursesByTeacherUC"),

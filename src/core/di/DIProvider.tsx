@@ -20,6 +20,11 @@ import { CourseRepository } from "@/src/features/courses/data/repositories/Cours
 import { CourseUseCases } from "@/src/features/courses/domain/usecases/CourseUseCases";
 // -------------------------------------------------
 
+// --- CLASES CONCRETAS NECESARIAS PARA FAKE_USERS ---
+import { FakeUserRobleSource } from "@/src/features/fake_users/data/datasources/FakeUserRobleSource";
+import { FakeUserRepositoryImpl } from "@/src/features/fake_users/data/repositories/FakeUserRepositoryImpl";
+// ---------------------------------------------------
+
 
 const DIContext = createContext<Container | null>(null);
 
@@ -39,20 +44,25 @@ export function DIProvider({ children }: { children: React.ReactNode }) {
         const prefs = c.resolve(TOKENS.LocalPrefs) as ILocalPreferences;
 
 
-        // ==========================================
-        // 1. REGISTROS DE AUTH
-        // ==========================================
-        const authDS = new AuthRemoteDataSourceImpl();
-        const authRepo = new AuthRepositoryImpl(authDS);
+        // ==========================================
+        // 1. REGISTROS DE AUTH
+        // ==========================================
+        const authDS = new AuthRemoteDataSourceImpl();
+        const authRepo = new AuthRepositoryImpl(authDS);
 
-        c.register(TOKENS.AuthRemoteDS, authDS)
-            .register(TOKENS.AuthRepo, authRepo)
-            .register(TOKENS.LoginUC, new LoginUseCase(authRepo))
-            .register(TOKENS.SignupUC, new SignupUseCase(authRepo))
-            .register(TOKENS.LogoutUC, new LogoutUseCase(authRepo))
-            .register(TOKENS.GetCurrentUserUC, new GetCurrentUserUseCase(authRepo));
+        // ==========================================
+        // 1.5 REGISTROS DE FAKE_USERS
+        // ==========================================
+        const fakeUserDS = new FakeUserRobleSource(prefs);
+        const fakeUserRepo = new FakeUserRepositoryImpl(fakeUserDS);
+        c.register(TOKENS.FakeUserRepo, fakeUserRepo);
 
-
+        c.register(TOKENS.AuthRemoteDS, authDS)
+            .register(TOKENS.AuthRepo, authRepo)
+            .register(TOKENS.LoginUC, new LoginUseCase(authRepo))
+            .register(TOKENS.SignupUC, new SignupUseCase(authRepo))
+            .register(TOKENS.LogoutUC, new LogoutUseCase(authRepo))
+            .register(TOKENS.GetCurrentUserUC, new GetCurrentUserUseCase(authRepo));
         // ==========================================
         // 2. REGISTROS DE CURSOS 
         // ==========================================
