@@ -27,6 +27,7 @@ export const CourseCard = ({ course, onEdit, onDelete, onPress }: CourseCardProp
       navigation.navigate('CourseDetail', {
         courseId: course.id,
         courseName: course.name,
+        teacherId: course.teacherId, // Agregar teacherId para saber quién es el dueño
       });
     }
   };

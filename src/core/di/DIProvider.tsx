@@ -31,6 +31,12 @@ import { UserCourseRepositoryImpl } from "@/src/features/user_courses/data/repos
 import { GetCourseStudentsUseCase } from "@/src/features/user_courses/domain/usecases/GetCourseStudentsUseCase";
 // ---------------------------------------------------
 
+// --- CLASES CONCRETAS NECESARIAS PARA CATEGORIES ---
+import { CategoryRobleDataSource } from "@/src/features/categories/data/datasources/CategoryRobleDataSource";
+import { CategoryRepositoryImpl } from "@/src/features/categories/data/repositories/CategoryRepositoryImpl";
+import { CategoryUseCases } from "@/src/features/categories/domain/usecases/CategoryUseCases";
+// ---------------------------------------------------
+
 
 const DIContext = createContext<Container | null>(null);
 
@@ -103,6 +109,17 @@ export function DIProvider({ children }: { children: React.ReactNode }) {
 
         const getCourseStudentsUC = new GetCourseStudentsUseCase(userCourseRepo, fakeUserRepo);
         c.register(TOKENS.GetCourseStudentsUC, getCourseStudentsUC);
+
+        // ==========================================
+        // 4. REGISTROS DE CATEGORIES
+        // ==========================================
+        const categoryDS = new CategoryRobleDataSource(prefs);
+        const categoryRepo = new CategoryRepositoryImpl(categoryDS);
+        const categoryUseCases = new CategoryUseCases(categoryRepo);
+        
+        c.register(TOKENS.CategoryDataSource, categoryDS)
+            .register(TOKENS.CategoryRepo, categoryRepo)
+            .register(TOKENS.CategoryUseCases, categoryUseCases);
 
         return c;
     }, []);

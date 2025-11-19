@@ -1,19 +1,17 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
-import { View } from 'react-native';
 import { Appbar } from 'react-native-paper';
 import { SceneMap, TabBar, TabView } from 'react-native-tab-view';
+import { CategoryProvider } from '../../../categories/presentation/context/CategoryContext';
+import { CategoriesListPage } from '../../../categories/presentation/screens/CategoriesListPage';
 import { StudentsListPage } from './StudentsListPage';
-// import { CategoriesPage } from '../../../categories/ui/pages/CategoriesPage'; // (Aún no migrada)
-
-// Placeholder para la pestaña de Categorías
-const CategoriesPlaceholder = () => <View style={{ flex: 1, backgroundColor: '#f0f0f0' }} />;
 
 // Definición de tipos para los parámetros de ruta
 type CourseDetailRouteParams = {
   CourseDetail: {
     courseId: string;
     courseName: string;
+    teacherId: string; // ID del profesor dueño del curso
   };
 };
 
@@ -22,7 +20,7 @@ type CourseDetailScreenRouteProp = RouteProp<CourseDetailRouteParams, 'CourseDet
 export const CourseDetailPage = () => {
   const navigation = useNavigation();
   const route = useRoute<CourseDetailScreenRouteProp>();
-  const { courseId, courseName } = route.params;
+  const { courseId, courseName, teacherId } = route.params;
 
   const [index, setIndex] = React.useState(0);
   const [routes] = React.useState([
@@ -30,16 +28,17 @@ export const CourseDetailPage = () => {
     { key: 'categories', title: 'Categorías' },
   ]);
 
-  // Pasamos el courseId a la pestaña de Estudiantes
+  // Pasamos el courseId y teacherId a las pestañas
   const StudentsTab = () => <StudentsListPage courseId={courseId} />;
+  const CategoriesTab = () => <CategoriesListPage courseId={courseId} teacherId={teacherId} />;
 
   const renderScene = SceneMap({
     students: StudentsTab,
-    categories: CategoriesPlaceholder, // Reemplazar con <CategoriesPage courseId={courseId} /> cuando se migre
+    categories: CategoriesTab,
   });
 
   return (
-    <>
+    <CategoryProvider>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => navigation.goBack()} />
         <Appbar.Content title={courseName} />
@@ -50,6 +49,6 @@ export const CourseDetailPage = () => {
         onIndexChange={setIndex}
         renderTabBar={props => <TabBar {...props} />}
       />
-    </>
+    </CategoryProvider>
   );
 };

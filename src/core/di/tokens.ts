@@ -28,4 +28,9 @@ export const TOKENS = {
   EnrollUserUC: Symbol("EnrollUserUC"), 
   GetUserCoursesUC: Symbol("GetUserCoursesUC"),
   GetCourseStudentsUC: Symbol("GetCourseStudentsUC"),
+
+  // --- CATEGORIES ---
+  CategoryDataSource: Symbol("CategoryDataSource"),
+  CategoryRepo: Symbol("CategoryRepo"),
+  CategoryUseCases: Symbol("CategoryUseCases"),
 } as const;
