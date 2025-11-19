@@ -48,38 +48,32 @@ export const CourseProvider = ({ children }: CourseProviderProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadTeacherCourses = useCallback(async (): Promise<void> => {
-    if (!user) {
-      setError("Usuario no logueado");
-      setTeacherCourses([]); 
-      return;
-    }
+  const loadTeacherCourses = useCallback(async (): Promise<void> => {
+    if (!user?.id) {
+      setTeacherCourses([]); 
+      setLoading(false);
+      return;
+    }
 
+    try {
+      setLoading(true);
+      setError(null);
+      const result = await useCases.listCoursesByTeacher(user.id);
+      setTeacherCourses(result);
+    } catch (e: any) {
+      setError(e.message || 'Error al cargar cursos');
+      console.error("❌ Error al cargar cursos:", e);
+    } finally {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  useEffect(() => {
+    loadTeacherCourses();
+  }, [loadTeacherCourses]);  const loadCoursesByIds = async (courseIds: string[]): Promise<Course[]> => {
     try {
-      setLoading(true);
-      setError(null);
-      const result = await useCases.listCoursesByTeacher(user.id);
-      setTeacherCourses(result);
-    } catch (e: any) {
-      setError(e.message || 'Error al cargar cursos');
-      console.error("❌ Error al cargar cursos:", e);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, useCases]);
-
-  useEffect(() => {
-    if (user) {
-      loadTeacherCourses();
-    } else {
-      setTeacherCourses([]); 
-    }
-  }, [user, loadTeacherCourses]); 
-
-  const loadCoursesByIds = async (courseIds: string[]): Promise<Course[]> => {
-    try {
-      setLoading(true);
-      setError(null);
+      // NO setLoading aquí - evita interferir con TeachingTab
       const result: Course[] = [];
       for (const id of courseIds) {
         const course = await useCases.getCourse(id);
@@ -89,11 +83,8 @@ export const CourseProvider = ({ children }: CourseProviderProps) => {
       }
       return result;
     } catch (e: any) {
-      setError(e.message || 'Error al cargar cursos por IDs');
       console.error("❌ Error al cargar cursos por IDs:", e);
       return [];
-    } finally {
-      setLoading(false);
     }
   };
 
