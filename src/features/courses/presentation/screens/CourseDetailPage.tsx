@@ -31,7 +31,7 @@ export const CourseDetailPage = () => {
 
   // Pasamos el courseId y teacherId a las pestañas
   const StudentsTab = () => <StudentsListPage courseId={courseId} />;
-  const CategoriesTab = () => <CategoriesListPage courseId={courseId} teacherId={teacherId} />;
+  const CategoriesTab = () => <CategoriesListPage courseId={courseId} courseName={courseName} teacherId={teacherId} />;
 
   const renderScene = SceneMap({
     students: StudentsTab,

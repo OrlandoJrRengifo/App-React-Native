@@ -2,7 +2,7 @@
  * @fileoverview Pantalla que muestra la lista de categorías de un curso.
  */
 import { useAuth } from '@/src/features/auth/presentation/context/authContext';
-import { GroupsListPage } from '@/src/features/groups/presentation/screens/GroupsListPage';
+import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Button, Dialog, FAB, Portal, Text } from 'react-native-paper';
@@ -13,10 +13,12 @@ import { useCategories } from '../context/CategoryContext';
 
 interface CategoriesListPageProps {
   courseId: string;
+  courseName: string;
   teacherId: string; // ID del profesor dueño del curso
 }
 
-export const CategoriesListPage = ({ courseId, teacherId }: CategoriesListPageProps) => {
+export const CategoriesListPage = ({ courseId, courseName, teacherId }: CategoriesListPageProps) => {
+  const navigation = useNavigation<any>();
   const { user } = useAuth();
   const { categories, loading, error, loadCategoriesByCourse, createCategory, updateCategory, deleteCategory } = useCategories();
 
@@ -24,7 +26,6 @@ export const CategoriesListPage = ({ courseId, teacherId }: CategoriesListPagePr
   const [deleteVisible, setDeleteVisible] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<Category | undefined>(undefined);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | undefined>(undefined);
-  const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
 
   // Verificar si el usuario actual es el profesor del curso
   const isTeacher = user?.id === teacherId;
@@ -55,22 +56,23 @@ export const CategoriesListPage = ({ courseId, teacherId }: CategoriesListPagePr
 
   const handleCategoryPress = (category: Category) => {
     console.log('📂 Categoría seleccionada:', category.name);
-    setSelectedCategory(category);
-  };
-
-  const handleBackFromGroups = () => {
-    setSelectedCategory(undefined);
+    navigation.navigate('GroupsList', {
+      categoryId: category.id,
+      categoryName: category.name,
+      maxGroupSize: category.maxGroupSize,
+      teacherId,
+      courseId,
+      courseName,
+    });
   };
 
   const handleFormSubmit = async (data: CategoryFormData) => {
     try {
       if (data.id) {
-        // Editar categoría existente
+        // Editar categoría existente (solo nombre)
         if (!categoryToEdit) return;
         const updatedCategory = categoryToEdit.copyWith({
           name: data.name,
-          groupingMethod: data.groupingMethod,
-          maxGroupSize: data.maxGroupSize,
         });
         await updateCategory(updatedCategory);
       } else {
@@ -144,28 +146,6 @@ export const CategoriesListPage = ({ courseId, teacherId }: CategoriesListPagePr
             Crear Primera Categoría
           </Button>
         )}
-      </View>
-    );
-  }
-
-  // Si hay una categoría seleccionada, mostrar la lista de grupos
-  if (selectedCategory) {
-    return (
-      <View style={{ flex: 1 }}>
-        <Button
-          mode="text"
-          icon="arrow-left"
-          onPress={handleBackFromGroups}
-          style={{ alignSelf: 'flex-start' }}
-        >
-          Volver a Categorías
-        </Button>
-        <GroupsListPage
-          categoryId={selectedCategory.id!}
-          categoryName={selectedCategory.name}
-          maxGroupSize={selectedCategory.maxGroupSize}
-          teacherId={teacherId}
-        />
       </View>
     );
   }

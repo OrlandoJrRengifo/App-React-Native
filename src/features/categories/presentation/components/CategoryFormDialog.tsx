@@ -31,6 +31,8 @@ export const CategoryFormDialog = ({
   const [maxGroupSize, setMaxGroupSize] = useState('4');
   const [submitting, setSubmitting] = useState(false);
 
+  const isEditing = !!category;
+
   useEffect(() => {
     if (category) {
       setName(category.name);
@@ -86,30 +88,34 @@ export const CategoryFormDialog = ({
               disabled={submitting}
             />
 
-            <Text style={styles.sectionTitle}>Método de Agrupación</Text>
-            <RadioButton.Group
-              onValueChange={(value) => setGroupingMethod(value as GroupingMethod)}
-              value={groupingMethod}
-            >
-              <View style={styles.radioItem}>
-                <RadioButton value="random" disabled={submitting} />
-                <Text style={styles.radioLabel}>Aleatorio (Random)</Text>
-              </View>
-              <View style={styles.radioItem}>
-                <RadioButton value="self-signed" disabled={submitting} />
-                <Text style={styles.radioLabel}>Auto-inscripción (Self-signed)</Text>
-              </View>
-            </RadioButton.Group>
+            {!isEditing && (
+              <>
+                <Text style={styles.sectionTitle}>Método de Agrupación</Text>
+                <RadioButton.Group
+                  onValueChange={(value) => setGroupingMethod(value as GroupingMethod)}
+                  value={groupingMethod}
+                >
+                  <View style={styles.radioItem}>
+                    <RadioButton value="random" disabled={submitting} />
+                    <Text style={styles.radioLabel}>Aleatorio (Random)</Text>
+                  </View>
+                  <View style={styles.radioItem}>
+                    <RadioButton value="self-signed" disabled={submitting} />
+                    <Text style={styles.radioLabel}>Auto-inscripción (Self-signed)</Text>
+                  </View>
+                </RadioButton.Group>
 
-            <TextInput
-              label="Tamaño máximo del grupo"
-              value={maxGroupSize}
-              onChangeText={setMaxGroupSize}
-              mode="outlined"
-              keyboardType="number-pad"
-              style={styles.input}
-              disabled={submitting}
-            />
+                <TextInput
+                  label="Tamaño máximo del grupo"
+                  value={maxGroupSize}
+                  onChangeText={setMaxGroupSize}
+                  mode="outlined"
+                  keyboardType="number-pad"
+                  style={styles.input}
+                  disabled={submitting}
+                />
+              </>
+            )}
           </ScrollView>
         </Dialog.ScrollArea>
         <Dialog.Actions>
