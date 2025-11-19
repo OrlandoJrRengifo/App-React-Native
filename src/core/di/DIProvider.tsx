@@ -25,6 +25,12 @@ import { FakeUserRobleSource } from "@/src/features/fake_users/data/datasources/
 import { FakeUserRepositoryImpl } from "@/src/features/fake_users/data/repositories/FakeUserRepositoryImpl";
 // ---------------------------------------------------
 
+// --- CLASES CONCRETAS NECESARIAS PARA USER_COURSES ---
+import { UserCourseRemoteDataSourceImpl } from "@/src/features/user_courses/data/datasources/UserCourseRemoteDataSource";
+import { UserCourseRepositoryImpl } from "@/src/features/user_courses/data/repositories/UserCourseRepositoryImpl";
+import { GetCourseStudentsUseCase } from "@/src/features/user_courses/domain/usecases/GetCourseStudentsUseCase";
+// ---------------------------------------------------
+
 
 const DIContext = createContext<Container | null>(null);
 
@@ -88,7 +94,17 @@ export function DIProvider({ children }: { children: React.ReactNode }) {
             .register(TOKENS.GetCourseByCodeUC, courseUCInstance.getCourseByCode.bind(courseUCInstance))
             .register(TOKENS.CanCreateMoreUC, courseUCInstance.canCreateMore.bind(courseUCInstance));
 
-        return c;
+        // ==========================================
+        // 3. REGISTROS DE USER_COURSES
+        // ==========================================
+        const userCourseDS = new UserCourseRemoteDataSourceImpl();
+        const userCourseRepo = new UserCourseRepositoryImpl(userCourseDS);
+        c.register(TOKENS.UserCourseRepo, userCourseRepo);
+
+        const getCourseStudentsUC = new GetCourseStudentsUseCase(userCourseRepo, fakeUserRepo);
+        c.register(TOKENS.GetCourseStudentsUC, getCourseStudentsUC);
+
+        return c;
     }, []);
 
     return <DIContext.Provider value={container}>{children}</DIContext.Provider>;

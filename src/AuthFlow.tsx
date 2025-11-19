@@ -6,6 +6,7 @@ import LoginScreen from "./features/auth/presentation/screens/LoginScreen";
 import SignupScreen from "./features/auth/presentation/screens/SignupScreen";
 // Importamos el CourseDashboard, asumiendo esta ruta
 import { CourseDashboardScreen } from "./features/courses/presentation/screens/CourseDashboard";
+import { CourseDetailPage } from "./features/courses/presentation/screens/CourseDetailPage";
 
 
 const Stack = createStackNavigator();
@@ -24,6 +25,10 @@ export default function AuthFlow() {
         <Stack.Screen 
           name="CourseDashboard" 
           component={CourseDashboardScreen} 
+        />
+        <Stack.Screen 
+          name="CourseDetail" 
+          component={CourseDetailPage} 
         />
       </Stack.Navigator>
     );

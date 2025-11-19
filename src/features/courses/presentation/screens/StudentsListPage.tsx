@@ -1,32 +1,20 @@
+import { useDI } from '@/src/core/di/DIProvider';
+import { TOKENS } from '@/src/core/di/tokens';
+import { CourseStudent, GetCourseStudentsUseCase } from '@/src/features/user_courses/domain/usecases/GetCourseStudentsUseCase';
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Avatar, List, Text } from 'react-native-paper';
-
-type FakeUser = { id?: string, authId: string, email: string, name: string };
-const useUserCourses = () => ({
-  courseUsers: [] as string[],
-  fetchCourseUsers: (courseId: string) => console.log('fetchCourseUsers(id) (pendiente)'),
-});
-const useFakeUsers = () => ({
-  getUsersByIds: (ids: string[]) => Promise.resolve([] as FakeUser[]),
-});
 
 interface StudentsListPageProps {
   courseId: string;
 }
 
-interface MappedStudent {
-  id: string;
-  name: string;
-  email: string;
-}
-
 export const StudentsListPage = ({ courseId }: StudentsListPageProps) => {
-  const { courseUsers: studentIds, fetchCourseUsers } = useUserCourses();
-  const { getUsersByIds } = useFakeUsers();
+  const container = useDI();
+  const getCourseStudentsUC = container.resolve(TOKENS.GetCourseStudentsUC) as GetCourseStudentsUseCase;
 
-  const [loading, setLoading] = useState(false);
-  const [students, setStudents] = useState<MappedStudent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [students, setStudents] = useState<CourseStudent[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -35,29 +23,13 @@ export const StudentsListPage = ({ courseId }: StudentsListPageProps) => {
         setLoading(true);
         setError(null);
 
-        // 1. Traemos los IDs de los estudiantes inscritos
-        await fetchCourseUsers(courseId);
+        console.log(`📚 Cargando estudiantes del curso: ${courseId}`);
+        const fetchedStudents = await getCourseStudentsUC.execute(courseId);
         
-        if (studentIds.length === 0) {
-          console.log(`⚠️ No hay estudiantes inscritos en el curso ${courseId}`);
-          setStudents([]);
-          setLoading(false);
-          return;
-        }
-
-        // 2. Obtenemos los usuarios (FakeUser)
-        const fetchedUsers = await getUsersByIds(studentIds);
-        
-        // 3. Mapearlos para la UI
-        const mapped = fetchedUsers.map((u) => ({
-          id: u.authId,
-          name: u.name || "Sin nombre",
-          email: u.email || "Sin correo",
-        }));
-
-        setStudents(mapped);
+        console.log(`✅ Se encontraron ${fetchedStudents.length} estudiantes`);
+        setStudents(fetchedStudents);
       } catch (e: any) {
-        console.error("❌ Error en _loadStudents:", e);
+        console.error("❌ Error al cargar estudiantes:", e);
         setError(e.message || "Error cargando estudiantes");
       } finally {
         setLoading(false);
@@ -65,10 +37,15 @@ export const StudentsListPage = ({ courseId }: StudentsListPageProps) => {
     };
 
     loadStudents();
-  }, [courseId, fetchCourseUsers, getUsersByIds, studentIds]);
+  }, [courseId]);
 
   if (loading) {
-    return <ActivityIndicator style={styles.centered} />;
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" />
+        <Text style={{ marginTop: 16 }}>Cargando estudiantes...</Text>
+      </View>
+    );
   }
 
   if (error) {
@@ -82,7 +59,7 @@ export const StudentsListPage = ({ courseId }: StudentsListPageProps) => {
   if (students.length === 0) {
     return (
       <View style={styles.centered}>
-        <Text>No hay estudiantes inscritos</Text>
+        <Text>No hay estudiantes inscritos en este curso</Text>
       </View>
     );
   }
