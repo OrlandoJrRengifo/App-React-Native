@@ -1,7 +1,7 @@
 import React, { createContext, ReactNode, useCallback, useContext, useState } from 'react';
-import { UserCourse } from '../../domain/entities/UserCourse';
 import { UserCourseRemoteDataSourceImpl } from '../../data/datasources/UserCourseRemoteDataSource';
 import { UserCourseRepositoryImpl } from '../../data/repositories/UserCourseRepositoryImpl';
+import { UserCourse } from '../../domain/entities/UserCourse';
 import { UserCourseUseCase } from '../../domain/usecases/UserCourseUseCase';
 
 // --------------------------------------------------------------------------------
