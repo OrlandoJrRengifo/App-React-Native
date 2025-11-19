@@ -33,17 +33,15 @@ export const CourseProvider = ({ children }: CourseProviderProps) => {
   
   const container: any = useDI(); 
   
-  const useCases: CourseUseCases = useMemo(() => ({
-    createCourse: container.resolve(TOKENS.CreateCourseUC), 
-    updateCourse: container.resolve(TOKENS.UpdateCourseUC), 
-    deleteCourse: container.resolve(TOKENS.DeleteCourseUC), 
-    listCoursesByTeacher: container.resolve(TOKENS.ListCoursesByTeacherUC), 
-    getCourse: container.resolve(TOKENS.GetCourseByIdUC), 
-    getCourseByCode: container.resolve(TOKENS.GetCourseByCodeUC), 
-    canCreateMore: container.resolve(TOKENS.CanCreateMoreUC), 
-  } as CourseUseCases), [container]);
-
-  const { user } = useAuth(); 
+  
+  const useCases: CourseUseCases = useMemo(() => ({
+    createCourse: container.resolve(TOKENS.CreateCourseUC), 
+    updateCourse: container.resolve(TOKENS.UpdateCourseUC), 
+    deleteCourse: container.resolve(TOKENS.DeleteCourseUC), 
+    listCoursesByTeacher: container.resolve(TOKENS.ListCoursesByTeacherUC), 
+    getCourse: container.resolve(TOKENS.GetCourseByIdUC), 
+    getCourseByCode: container.resolve(TOKENS.GetCourseByCodeUC), 
+  } as CourseUseCases), [container]);  const { user } = useAuth(); 
   const [teacherCourses, setTeacherCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,36 +86,41 @@ export const CourseProvider = ({ children }: CourseProviderProps) => {
     }
   };
 
-  /**
-   * Agrega un nuevo curso (como profesor).
-   */
-  const addCourse = async ({ name, code, maxStudents }: { name: string, code: string, maxStudents: number }): Promise<void> => {
-    if (!user) {
-      setError("Usuario no logueado");
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      setError(null);
-      const newCourse = await useCases.createCourse({
-        name,
-        code,
-        teacherId: user.id, 
-        maxStudents,
-        createdAt: new Date(),
-      });
-      setTeacherCourses(prev => [...prev, newCourse]); 
-    } catch (e: any) {
-      setError(e.message || 'Error al agregar curso');
-      console.error("❌ Error al agregar curso:", e);
-      throw e;
-    } finally {
-      setLoading(false);
-    }
-  };
+  /**
+   * Agrega un nuevo curso (como profesor).
+   */
+  const addCourse = async ({ name, code, maxStudents }: { name: string, code: string, maxStudents: number }): Promise<void> => {
+    if (!user) {
+      setError("Usuario no logueado");
+      return;
+    }
 
-  /**
+    // Validar límite de 3 cursos
+    if (teacherCourses.length >= 3) {
+      const errorMsg = "Has alcanzado el límite máximo de 3 cursos";
+      setError(errorMsg);
+      throw new Error(errorMsg);
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      const newCourse = await useCases.createCourse({
+        name,
+        code,
+        teacherId: user.id, 
+        maxStudents,
+        createdAt: new Date(),
+      });
+      setTeacherCourses(prev => [...prev, newCourse]); 
+    } catch (e: any) {
+      setError(e.message || 'Error al agregar curso');
+      console.error("❌ Error al agregar curso:", e);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  };  /**
    * Actualiza un curso en la lista de profesor.
    */
   const updateCourseInList = async (course: Course): Promise<void> => {
@@ -159,20 +162,13 @@ export const CourseProvider = ({ children }: CourseProviderProps) => {
     }
   };
 
-  /**
-   * Verifica si el profesor puede crear más cursos (lógica de negocio).
-   */
-  const canCreateMore = async (): Promise<boolean> => {
-    if (!user) return false;
-    try {
-      return await (useCases as any).canCreateMore(user.id);
-    } catch (e) {
-      console.error("❌ Error al verificar canCreateMore:", e);
-      return false;
-    }
-  };
-
-  /**
+  /**
+   * Verifica si el profesor puede crear más cursos (máximo 3).
+   */
+  const canCreateMore = async (): Promise<boolean> => {
+    if (!user) return false;
+    return teacherCourses.length < 3;
+  };  /**
    * Busca un curso por su código (para unirse).
    */
   const getCourseIdByCode = async (code: string): Promise<string | null> => {
