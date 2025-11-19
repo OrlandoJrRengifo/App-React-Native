@@ -174,11 +174,16 @@ const EnrolledTab = () => {
   // Cargar los detalles completos de los cursos cuando los IDs cambian
   useEffect(() => {
     const loadCourseDetails = async () => {
-      if (state.enrolledCourseIds.length > 0) {
+      if (state.enrolledCourses.length > 0) {
         try {
-          const courses = await loadCoursesByIds(state.enrolledCourseIds);
-          setEnrolledCourses(courses);
+          const courseIds = state.enrolledCourses.map(uc => uc.courseId);
+          const courses = await loadCoursesByIds(courseIds);
+          
+          // Filtrar cursos donde el usuario NO es el profesor
+          const studentCourses = courses.filter(course => course.teacherId !== user?.id);
+          setEnrolledCourses(studentCourses);
         } catch (error) {
+          console.error("Error cargando detalles de cursos:", error);
         }
       } else {
         setEnrolledCourses([]);
@@ -186,7 +191,7 @@ const EnrolledTab = () => {
     };
     
     loadCourseDetails();
-  }, [state.enrolledCourseIds, loadCoursesByIds]);
+  }, [state.enrolledCourses, loadCoursesByIds, user?.id]);
 
   const handleJoinSuccess = () => {
     console.log("Join exitoso, recargando cursos del usuario");

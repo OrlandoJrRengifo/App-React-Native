@@ -1,5 +1,5 @@
 import React, { createContext, ReactNode, useCallback, useContext, useState } from 'react';
-// Rutas ajustadas para la capa de arquitectura
+import { UserCourse } from '../../domain/entities/UserCourse';
 import { UserCourseRemoteDataSourceImpl } from '../../data/datasources/UserCourseRemoteDataSource';
 import { UserCourseRepositoryImpl } from '../../data/repositories/UserCourseRepositoryImpl';
 import { UserCourseUseCase } from '../../domain/usecases/UserCourseUseCase';
@@ -17,7 +17,7 @@ const userCourseUseCase = new UserCourseUseCase(userCourseRepository);
 // --------------------------------------------------------------------------------
 
 interface UserCourseState {
-    enrolledCourseIds: string[]; 
+    enrolledCourses: UserCourse[]; 
     isLoading: boolean;
     error: string | null;
 }
@@ -25,12 +25,13 @@ interface UserCourseState {
 interface UserCourseContextType {
     state: UserCourseState;
     enrollUser: (userId: string, courseId: string) => Promise<boolean>;
+    unenrollUser: (userId: string, courseId: string) => Promise<boolean>;
     isUserInCourse: (userId: string, courseId: string) => Promise<boolean>;
     fetchUserCourses: (userId: string) => Promise<void>;
 }
 
 const initialUserCourseState: UserCourseState = {
-    enrolledCourseIds: [],
+    enrolledCourses: [],
     isLoading: false,
     error: null,
 };
@@ -52,16 +53,16 @@ export const UserCourseProvider: React.FC<UserCourseProviderProps> = ({ children
         setState(prev => ({ ...prev, isLoading: true, error: null }));
         console.log(`[UserCourseContext] Obteniendo cursos inscritos para user: ${userId}`);
         try {
-            const courseIds = await userCourseUseCase.getUserCourses(userId);
+            const userCourses = await userCourseUseCase.getUserCourses(userId);
             setState(prev => ({ 
                 ...prev, 
-                enrolledCourseIds: courseIds, 
+                enrolledCourses: userCourses, 
                 isLoading: false 
             }));
         } catch (e: any) {
             setState(prev => ({ 
                 ...prev, 
-                error: e.message || "Error al cargar los IDs de los cursos.", 
+                error: e.message || "Error al cargar los cursos.", 
                 isLoading: false 
             }));
             console.error("[UserCourseContext] Error en fetchUserCourses:", e);
@@ -95,13 +96,13 @@ export const UserCourseProvider: React.FC<UserCourseProviderProps> = ({ children
             }
 
             // 2. Ejecutar la inscripción
-            const success = await userCourseUseCase.enrollUser(userId, courseId);
+            const userCourse = await userCourseUseCase.enrollUser(userId, courseId);
             
-            if (success) {
+            if (userCourse) {
                 console.log("[UserCourseContext] Inscripción exitosa. Actualizando lista.");
                 setState(prev => ({
                     ...prev,
-                    enrolledCourseIds: [...prev.enrolledCourseIds, courseId],
+                    enrolledCourses: [...prev.enrolledCourses, userCourse],
                     isLoading: false,
                     error: null,
                 }));
@@ -124,10 +125,44 @@ export const UserCourseProvider: React.FC<UserCourseProviderProps> = ({ children
         }
     }, [state.error]);
 
+    const unenrollUser = useCallback(async (userId: string, courseId: string): Promise<boolean> => {
+        setState(prev => ({ ...prev, isLoading: true, error: null }));
+        console.log(`[UserCourseContext] Intentando desinscribir a ${userId} del curso ${courseId}`);
+
+        try {
+            const success = await userCourseUseCase.unenrollUser(userId, courseId);
+            
+            if (success) {
+                console.log("[UserCourseContext] Desinscripción exitosa. Actualizando lista.");
+                setState(prev => ({
+                    ...prev,
+                    enrolledCourses: prev.enrolledCourses.filter(uc => uc.courseId !== courseId),
+                    isLoading: false,
+                    error: null,
+                }));
+                return true;
+            } else {
+                const message = "Fallo al desinscribirse.";
+                setState(prev => ({ ...prev, error: message, isLoading: false }));
+                return false;
+            }
+
+        } catch (e: any) {
+            setState(prev => ({ 
+                ...prev, 
+                error: e.message || "Error desconocido durante la desinscripción.", 
+                isLoading: false 
+            }));
+            console.error("[UserCourseContext] Excepción en unenrollUser:", e);
+            return false;
+        }
+    }, []);
+
 
     const value = {
         state,
         enrollUser,
+        unenrollUser,
         isUserInCourse,
         fetchUserCourses,
     };

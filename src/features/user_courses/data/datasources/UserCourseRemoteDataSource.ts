@@ -1,4 +1,5 @@
-import { getAuthSessionData } from "@/src/core/utils/getAuthSession"; // Usamos el helper
+import { getAuthSessionData } from "@/src/core/utils/getAuthSession";
+import { UserCourse } from "../../domain/entities/UserCourse";
 import { UserCourseDataSource } from "./UserCourseDataSource";
 // Importar dependencias para la verificación de cupos si es necesario,
 // aquí simulamos el llamado a otra DS, como en Flutter.
@@ -33,14 +34,14 @@ export class UserCourseRemoteDataSourceImpl implements UserCourseDataSource {
     // ----------------------------------------------------------------------------
 
 
-    async enrollUser(userId: string, courseId: string): Promise<boolean> {
+    async enrollUser(userId: string, courseId: string): Promise<UserCourse | null> {
         console.log(`[UserCourseDS] Enroll user ${userId} in course ${courseId}`);
         
         // 1. Verificar cupos (simulado/externo)
         const availableSlots = await this.getAvailableSlots(courseId);
         if (availableSlots <= 0) {
             console.warn(`[UserCourseDS] No slots available in course ${courseId}`);
-            return false;
+            return null;
         }
 
         const { token } = await getAuthSessionData();
@@ -65,13 +66,21 @@ export class UserCourseRemoteDataSourceImpl implements UserCourseDataSource {
         if (response.status !== 200 && response.status !== 201) {
              const errorBody = await response.json();
              console.error("[UserCourseDS] Enrollment failed:", errorBody);
-             return false;
+             return null;
         }
+        
+        const data = await response.json();
         console.log(`[UserCourseDS] User ${userId} successfully enrolled in ${courseId}`);
-        return true;
+        
+        // Retornar la entidad creada
+        return new UserCourse({
+            id: data[0]?.id,
+            userId,
+            courseId,
+        });
     }
 
-    async getUserCourses(userId: string): Promise<string[]> {
+    async getUserCourses(userId: string): Promise<UserCourse[]> {
         console.log(`[UserCourseDS] Getting courses for user ${userId}`);
         const { token } = await getAuthSessionData();
         if (!token) return [];
@@ -84,14 +93,18 @@ export class UserCourseRemoteDataSourceImpl implements UserCourseDataSource {
         });
 
         if (response.status === 200) {
-            const data = await response.json() as { course_id: string }[];
-            return data.map((e) => e["course_id"]);
+            const data = await response.json() as { id: string; user_id: string; course_id: string }[];
+            return data.map((record) => new UserCourse({
+                id: record.id,
+                userId: record.user_id,
+                courseId: record.course_id,
+            }));
         }
         console.error(`[UserCourseDS] Failed to get user courses (Status: ${response.status})`);
         return [];
     }
 
-    async getCourseUsers(courseId: string): Promise<string[]> {
+    async getCourseUsers(courseId: string): Promise<UserCourse[]> {
         console.log(`[UserCourseDS] Getting users for course ${courseId}`);
         const { token } = await getAuthSessionData();
         if (!token) return [];
@@ -104,8 +117,12 @@ export class UserCourseRemoteDataSourceImpl implements UserCourseDataSource {
         });
 
         if (response.status === 200) {
-            const data = await response.json() as { user_id: string }[];
-            return data.map((e) => e["user_id"]);
+            const data = await response.json() as { id: string; user_id: string; course_id: string }[];
+            return data.map((record) => new UserCourse({
+                id: record.id,
+                userId: record.user_id,
+                courseId: record.course_id,
+            }));
         }
         console.error(`[UserCourseDS] Failed to get course users (Status: ${response.status})`);
         return [];
@@ -132,5 +149,37 @@ export class UserCourseRemoteDataSourceImpl implements UserCourseDataSource {
         const isInCourse = data.length > 0;
         console.log(`[UserCourseDS] User ${userId} is in course ${courseId}: ${isInCourse}`);
         return isInCourse; 
+    }
+
+    async unenrollUser(userId: string, courseId: string): Promise<boolean> {
+        console.log(`[UserCourseDS] Unenrolling user ${userId} from course ${courseId}`);
+        const { token } = await getAuthSessionData();
+        if (!token) throw new Error("Authentication token not available.");
+
+        const body = {
+            "tableName": "user_courses",
+            "where": {
+                "user_id": userId,
+                "course_id": courseId
+            }
+        };
+
+        const response = await fetch(`${this.baseUrl}/delete`, {
+            method: "DELETE",
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(body),
+        });
+
+        if (response.status !== 200 && response.status !== 201) {
+            const errorBody = await response.json();
+            console.error("[UserCourseDS] Unenrollment failed:", errorBody);
+            return false;
+        }
+        
+        console.log(`[UserCourseDS] User ${userId} successfully unenrolled from ${courseId}`);
+        return true;
     }
 }
