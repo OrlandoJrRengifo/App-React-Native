@@ -39,8 +39,7 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
         setEmail(savedEmail);
         setPassword(savedPassword);
         setRememberMe(true);
-        const success = await login(savedEmail.trim(), savedPassword);
-        if (success) navigation.replace("Dashboard");
+        await login(savedEmail.trim(), savedPassword);
       }
     }
   };
@@ -64,7 +63,6 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
           await AsyncStorage.setItem("remember_me", "false");
         }
         setShowSnack(true);
-        setTimeout(() => navigation.replace("Dashboard"), 800);
       } else {
         setError("Usuario o contraseña incorrectos");
       }

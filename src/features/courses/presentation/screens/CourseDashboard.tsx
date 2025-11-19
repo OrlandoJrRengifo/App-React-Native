@@ -225,7 +225,6 @@ const EnrolledTab = () => {
       >
         Unirse al Curso
       </Button>
-      
       {enrolledCourses.length === 0 ? (
         <EmptyStudentState />
       ) : (
@@ -235,7 +234,6 @@ const EnrolledTab = () => {
           renderItem={({ item }) => <CourseCard course={item} />}
         />
       )}
-      
       <JoinCourseDialog
         visible={joinVisible}
         onDismiss={() => setJoinVisible(false)}

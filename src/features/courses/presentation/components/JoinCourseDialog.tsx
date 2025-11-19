@@ -82,17 +82,11 @@ export const JoinCourseDialog = ({ visible, onDismiss, onJoinSuccess }: JoinCour
             mode="outlined"
             autoCapitalize="none"
           />
-          {error && (
-            <HelperText type="error" visible={true}>
-              {error}
-            </HelperText>
-          )}
+          {error && <HelperText type="error" visible={true}>{error}</HelperText>}
         </Dialog.Content>
         <Dialog.Actions>
           <Button onPress={onDismiss} disabled={loading}>Cancelar</Button>
-          <Button onPress={handleSubmit} mode="contained" loading={loading} disabled={loading}>
-            Unirse
-          </Button>
+          <Button onPress={handleSubmit} mode="contained" loading={loading} disabled={loading}>Unirse</Button>
         </Dialog.Actions>
       </Dialog>
     </Portal>

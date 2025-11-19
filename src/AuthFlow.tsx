@@ -19,15 +19,12 @@ export default function AuthFlow() {
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
-          // Puedes configurar un Appbar aquí si no lo haces en el Dashboard
         }}
       >
-        {/* La pantalla principal después del login es el Dashboard de Cursos */}
         <Stack.Screen 
           name="CourseDashboard" 
           component={CourseDashboardScreen} 
         />
-        {/* Aquí irían otras pantallas relacionadas con cursos, si las hubiera (ej: detalle de curso) */}
       </Stack.Navigator>
     );
   }
@@ -35,10 +32,8 @@ export default function AuthFlow() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isLoggedIn ? (
-        // Si está logueado, ve al flujo principal de la aplicación (Dashboard)
         <Stack.Screen name="App" component={MainAppStack} />
       ) : (
-        // Si no está logueado, ve a Login/Signup
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Signup" component={SignupScreen} />
