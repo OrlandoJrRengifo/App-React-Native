@@ -1,7 +1,3 @@
-/**
- * @fileoverview Entidad UserGroup que representa la inscripción de un usuario a un grupo.
- */
-
 export class UserGroup {
   id?: string;
   userId: string;

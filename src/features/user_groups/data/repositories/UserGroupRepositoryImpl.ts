@@ -1,6 +1,3 @@
-/**
- * @fileoverview Implementación del repositorio de UserGroup.
- */
 import { UserGroup } from '../../domain/entities/UserGroup';
 import { UserGroupRepository } from '../../domain/repositories/UserGroupRepository';
 import { UserGroupDataSource } from '../datasources/UserGroupDataSource';
