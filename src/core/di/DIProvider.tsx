@@ -37,6 +37,13 @@ import { CategoryRepositoryImpl } from "@/src/features/categories/data/repositor
 import { CategoryUseCases } from "@/src/features/categories/domain/usecases/CategoryUseCases";
 // ---------------------------------------------------
 
+// --- CLASES CONCRETAS NECESARIAS PARA GROUPS ---
+import { GroupRobleDataSource } from "@/src/features/groups/data/datasources/GroupRobleDataSource";
+import { GroupRepositoryImpl } from "@/src/features/groups/data/repositories/GroupRepositoryImpl";
+import { GroupUseCases } from "@/src/features/groups/domain/usecases/GroupUseCases";
+import { CreateCategoryWithGroupsUseCase } from "@/src/features/groups/domain/usecases/CreateCategoryWithGroupsUseCase";
+// ---------------------------------------------------
+
 
 const DIContext = createContext<Container | null>(null);
 
@@ -120,6 +127,25 @@ export function DIProvider({ children }: { children: React.ReactNode }) {
         c.register(TOKENS.CategoryDataSource, categoryDS)
             .register(TOKENS.CategoryRepo, categoryRepo)
             .register(TOKENS.CategoryUseCases, categoryUseCases);
+
+        // ==========================================
+        // 5. REGISTROS DE GROUPS
+        // ==========================================
+        const groupDS = new GroupRobleDataSource(prefs);
+        const groupRepo = new GroupRepositoryImpl(groupDS);
+        const groupUseCases = new GroupUseCases(groupRepo);
+
+        c.register(TOKENS.GroupDataSource, groupDS)
+            .register(TOKENS.GroupRepo, groupRepo)
+            .register(TOKENS.GroupUseCases, groupUseCases);
+
+        // Use Case especial que combina categorías y grupos
+        const createCategoryWithGroupsUC = new CreateCategoryWithGroupsUseCase(
+            categoryRepo,
+            groupRepo,
+            userCourseRepo
+        );
+        c.register(TOKENS.CreateCategoryWithGroupsUC, createCategoryWithGroupsUC);
 
         return c;
     }, []);

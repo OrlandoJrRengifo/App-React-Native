@@ -33,4 +33,10 @@ export const TOKENS = {
   CategoryDataSource: Symbol("CategoryDataSource"),
   CategoryRepo: Symbol("CategoryRepo"),
   CategoryUseCases: Symbol("CategoryUseCases"),
+
+  // --- GROUPS ---
+  GroupDataSource: Symbol("GroupDataSource"),
+  GroupRepo: Symbol("GroupRepo"),
+  GroupUseCases: Symbol("GroupUseCases"),
+  CreateCategoryWithGroupsUC: Symbol("CreateCategoryWithGroupsUC"),
 } as const;

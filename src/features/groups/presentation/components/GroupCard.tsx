@@ -1,52 +1,40 @@
 /**
- * @fileoverview Card para mostrar una categoría.
+ * @fileoverview Card para mostrar un grupo.
  */
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Card, Chip, IconButton, Menu, Text } from 'react-native-paper';
-import { Category } from '../../domain/entities/Category';
+import { Card, IconButton, Menu, Text, Chip } from 'react-native-paper';
+import { Group } from '../../domain/entities/Group';
 
-interface CategoryCardProps {
-  category: Category;
-  onEdit?: (category: Category) => void;
-  onDelete?: (category: Category) => void;
-  onPress?: (category: Category) => void;
+interface GroupCardProps {
+  group: Group;
+  onEdit?: (group: Group) => void;
+  onDelete?: (group: Group) => void;
   isTeacher?: boolean;
 }
 
-export const CategoryCard = ({ category, onEdit, onDelete, onPress, isTeacher = false }: CategoryCardProps) => {
+export const GroupCard = ({ group, onEdit, onDelete, isTeacher = false }: GroupCardProps) => {
   const [menuVisible, setMenuVisible] = React.useState(false);
-
-  const formattedDate = category.createdAt
-    ? new Date(category.createdAt).toLocaleDateString()
-    : 'Sin fecha';
-
-  const groupingMethodLabel =
-    category.groupingMethod === 'random' ? 'Aleatorio' : 'Auto-inscripción';
 
   const handleEdit = () => {
     setMenuVisible(false);
-    onEdit?.(category);
+    onEdit?.(group);
   };
 
   const handleDelete = () => {
     setMenuVisible(false);
-    onDelete?.(category);
-  };
-
-  const handlePress = () => {
-    onPress?.(category);
+    onDelete?.(group);
   };
 
   const showMenu = isTeacher && onEdit != null && onDelete != null;
 
   return (
-    <Card style={styles.card} onPress={handlePress}>
+    <Card style={styles.card}>
       <Card.Content>
         <View style={styles.header}>
           <View style={styles.titleContainer}>
-            <Text variant="titleMedium" style={styles.title}>
-              {category.name}
+            <Text variant="titleLarge" style={styles.title}>
+              Grupo {group.numeration}
             </Text>
           </View>
           {showMenu && (
@@ -68,22 +56,10 @@ export const CategoryCard = ({ category, onEdit, onDelete, onPress, isTeacher = 
         </View>
 
         <View style={styles.infoRow}>
-          <Chip icon="account-group" mode="outlined" compact style={styles.chip}>
-            Max: {category.maxGroupSize} miembros
-          </Chip>
-          <Chip
-            icon={category.groupingMethod === 'random' ? 'shuffle' : 'account-check'}
-            mode="outlined"
-            compact
-            style={styles.chip}
-          >
-            {groupingMethodLabel}
+          <Chip icon="account-multiple" mode="outlined" compact style={styles.chip}>
+            Capacidad: {group.capacity}
           </Chip>
         </View>
-
-        <Text variant="bodySmall" style={styles.date}>
-          Creada: {formattedDate}
-        </Text>
       </Card.Content>
     </Card>
   );
@@ -104,7 +80,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontWeight: '600',
+    fontWeight: '700',
   },
   infoRow: {
     flexDirection: 'row',
@@ -114,9 +90,5 @@ const styles = StyleSheet.create({
   },
   chip: {
     marginRight: 4,
-  },
-  date: {
-    marginTop: 4,
-    opacity: 0.7,
   },
 });

@@ -6,6 +6,7 @@ import { TOKENS } from '@/src/core/di/tokens';
 import React, { createContext, ReactNode, useContext, useState } from 'react';
 import { Category, GroupingMethod } from '../../domain/entities/Category';
 import { CategoryUseCases } from '../../domain/usecases/CategoryUseCases';
+import { CreateCategoryWithGroupsUseCase } from '../../../groups/domain/usecases/CreateCategoryWithGroupsUseCase';
 
 interface ICategoryContext {
   categories: Category[];
@@ -32,6 +33,7 @@ interface CategoryProviderProps {
 export const CategoryProvider = ({ children }: CategoryProviderProps) => {
   const container = useDI();
   const useCases = container.resolve(TOKENS.CategoryUseCases) as CategoryUseCases;
+  const createCategoryWithGroupsUC = container.resolve(TOKENS.CreateCategoryWithGroupsUC) as CreateCategoryWithGroupsUseCase;
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
@@ -64,9 +66,12 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
       setLoading(true);
       setError(null);
       console.log(`➕ Creando categoría: ${params.name}`);
-      const newCategory = await useCases.createCategory(params);
-      setCategories((prev) => [...prev, newCategory]);
-      console.log('✅ Categoría creada exitosamente');
+      
+      // Usar el use case que crea categoría + grupos automáticamente
+      const result = await createCategoryWithGroupsUC.execute(params);
+      
+      setCategories((prev) => [...prev, result.category]);
+      console.log(`✅ Categoría creada exitosamente con ${result.groups.length} grupos`);
     } catch (e: any) {
       const errorMsg = e.message || 'Error al crear categoría';
       setError(errorMsg);

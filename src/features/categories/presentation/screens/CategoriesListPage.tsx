@@ -9,6 +9,7 @@ import { Category } from '../../domain/entities/Category';
 import { CategoryCard } from '../components/CategoryCard';
 import { CategoryFormData, CategoryFormDialog } from '../components/CategoryFormDialog';
 import { useCategories } from '../context/CategoryContext';
+import { GroupsListPage } from '@/src/features/groups/presentation/screens/GroupsListPage';
 
 interface CategoriesListPageProps {
   courseId: string;
@@ -23,6 +24,7 @@ export const CategoriesListPage = ({ courseId, teacherId }: CategoriesListPagePr
   const [deleteVisible, setDeleteVisible] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<Category | undefined>(undefined);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | undefined>(undefined);
+  const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
 
   // Verificar si el usuario actual es el profesor del curso
   const isTeacher = user?.id === teacherId;
@@ -49,6 +51,15 @@ export const CategoriesListPage = ({ courseId, teacherId }: CategoriesListPagePr
   const openDeleteDialog = (category: Category) => {
     setCategoryToDelete(category);
     setDeleteVisible(true);
+  };
+
+  const handleCategoryPress = (category: Category) => {
+    console.log('📂 Categoría seleccionada:', category.name);
+    setSelectedCategory(category);
+  };
+
+  const handleBackFromGroups = () => {
+    setSelectedCategory(undefined);
   };
 
   const handleFormSubmit = async (data: CategoryFormData) => {
@@ -137,6 +148,28 @@ export const CategoriesListPage = ({ courseId, teacherId }: CategoriesListPagePr
     );
   }
 
+  // Si hay una categoría seleccionada, mostrar la lista de grupos
+  if (selectedCategory) {
+    return (
+      <View style={{ flex: 1 }}>
+        <Button
+          mode="text"
+          icon="arrow-left"
+          onPress={handleBackFromGroups}
+          style={{ alignSelf: 'flex-start' }}
+        >
+          Volver a Categorías
+        </Button>
+        <GroupsListPage
+          categoryId={selectedCategory.id!}
+          categoryName={selectedCategory.name}
+          maxGroupSize={selectedCategory.maxGroupSize}
+          teacherId={teacherId}
+        />
+      </View>
+    );
+  }
+
   console.log('✅ Renderizando lista con', categories.length, 'categorías');
   return (
     <View style={styles.container}>
@@ -148,6 +181,7 @@ export const CategoriesListPage = ({ courseId, teacherId }: CategoriesListPagePr
             category={item}
             onEdit={isTeacher ? openEditForm : undefined}
             onDelete={isTeacher ? openDeleteDialog : undefined}
+            onPress={handleCategoryPress} // Agregar manejador de presión
             isTeacher={isTeacher}
           />
         )}

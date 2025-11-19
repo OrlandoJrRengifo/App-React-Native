@@ -4,6 +4,7 @@ import { Appbar } from 'react-native-paper';
 import { SceneMap, TabBar, TabView } from 'react-native-tab-view';
 import { CategoryProvider } from '../../../categories/presentation/context/CategoryContext';
 import { CategoriesListPage } from '../../../categories/presentation/screens/CategoriesListPage';
+import { GroupProvider } from '../../../groups/presentation/context/GroupContext';
 import { StudentsListPage } from './StudentsListPage';
 
 // Definición de tipos para los parámetros de ruta
@@ -39,16 +40,18 @@ export const CourseDetailPage = () => {
 
   return (
     <CategoryProvider>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title={courseName} />
-      </Appbar.Header>
-      <TabView
-        navigationState={{ index, routes }}
-        renderScene={renderScene}
-        onIndexChange={setIndex}
-        renderTabBar={props => <TabBar {...props} />}
-      />
+      <GroupProvider>
+        <Appbar.Header>
+          <Appbar.BackAction onPress={() => navigation.goBack()} />
+          <Appbar.Content title={courseName} />
+        </Appbar.Header>
+        <TabView
+          navigationState={{ index, routes }}
+          renderScene={renderScene}
+          onIndexChange={setIndex}
+          renderTabBar={props => <TabBar {...props} />}
+        />
+      </GroupProvider>
     </CategoryProvider>
   );
 };
