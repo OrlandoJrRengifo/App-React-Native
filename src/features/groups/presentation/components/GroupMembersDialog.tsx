@@ -4,7 +4,7 @@
 import { useDI } from '@/src/core/di/DIProvider';
 import { FakeUserRepoToken } from '@/src/core/di/tokens';
 import { FakeUser } from '@/src/features/fake_users/domain/entities/FakeUser';
-import { FakeUserRepository } from '@/src/features/fake_users/domain/repositories/FakeUserRepository';
+import { IFakeUserRepository } from '@/src/features/fake_users/domain/repositories/IFakeUserRepository';
 import { useUserGroups } from '@/src/features/user_groups/presentation/context/UserGroupContext';
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
@@ -20,7 +20,7 @@ interface GroupMembersDialogProps {
 export const GroupMembersDialog = ({ visible, group, onDismiss }: GroupMembersDialogProps) => {
   const theme = useTheme();
   const container = useDI();
-  const fakeUserRepo = container.resolve<FakeUserRepository>(FakeUserRepoToken);
+  const fakeUserRepo = container.resolve<IFakeUserRepository>(FakeUserRepoToken);
   const { userGroups, loadGroupMembers, loading } = useUserGroups();
 
   const [members, setMembers] = useState<FakeUser[]>([]);
@@ -56,7 +56,7 @@ export const GroupMembersDialog = ({ visible, group, onDismiss }: GroupMembersDi
   const loadUserDetails = async () => {
     try {
       const userIds = userGroups.map(ug => ug.userId);
-      const usersPromises = userIds.map(id => fakeUserRepo.getUserById(id));
+      const usersPromises = userIds.map(id => fakeUserRepo.getUserByAuthId(id));
       const users = await Promise.all(usersPromises);
       setMembers(users.filter((u: FakeUser | null): u is FakeUser => u !== null));
     } catch (e) {
