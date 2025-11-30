@@ -37,15 +37,20 @@ export const GroupCard = ({
   const [isFull, setIsFull] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState(true);
 
   useEffect(() => {
     loadGroupStatus();
   }, [group.id]);
 
   const loadGroupStatus = async () => {
-    if (!group.id || !user?.id) return;
+    if (!group.id || !user?.id) {
+      setLoadingStatus(false);
+      return;
+    }
 
     try {
+      setLoadingStatus(true);
       // Verificar si el usuario está inscrito
       const userGroup = await getUserCurrentGroup(user.id, categoryId);
       setIsEnrolled(userGroup?.groupId === group.id);
@@ -59,6 +64,8 @@ export const GroupCard = ({
       setIsFull(full);
     } catch (e) {
       console.error('Error loading group status:', e);
+    } finally {
+      setLoadingStatus(false);
     }
   };
 
@@ -111,6 +118,28 @@ export const GroupCard = ({
   const showMenu = isTeacher && (onEdit != null || onDelete != null);
   const canJoin = !isTeacher && !isEnrolled && !isFull;
   const canLeave = !isTeacher && isEnrolled;
+
+  // Mostrar placeholder mientras carga
+  if (loadingStatus) {
+    return (
+      <Card style={styles.card}>
+        <Card.Content>
+          <View style={styles.header}>
+            <View style={styles.titleContainer}>
+              <Text variant="titleLarge" style={styles.title}>
+                Grupo {group.numeration}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.loadingContainer}>
+            <Text variant="bodyMedium" style={{ color: theme.colors.outline }}>
+              Cargando información...
+            </Text>
+          </View>
+        </Card.Content>
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -259,6 +288,10 @@ const styles = StyleSheet.create({
   },
   chip: {
     marginRight: 4,
+  },
+  loadingContainer: {
+    paddingVertical: 16,
+    alignItems: 'center',
   },
   actionRow: {
     marginTop: 12,
