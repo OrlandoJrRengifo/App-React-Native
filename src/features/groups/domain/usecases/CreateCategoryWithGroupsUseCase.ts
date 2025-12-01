@@ -4,6 +4,8 @@
 import { Category, GroupingMethod } from '../../../categories/domain/entities/Category';
 import { ICategoryRepository } from '../../../categories/domain/repositories/ICategoryRepository';
 import { UserCourseRepository } from '../../../user_courses/domain/repositories/UserCourseRepository';
+import { UserGroup } from '../../../user_groups/domain/entities/UserGroup';
+import { UserGroupRepository } from '../../../user_groups/domain/repositories/UserGroupRepository';
 import { Group } from '../entities/Group';
 import { IGroupRepository } from '../repositories/IGroupRepository';
 
@@ -11,7 +13,8 @@ export class CreateCategoryWithGroupsUseCase {
   constructor(
     private categoryRepository: ICategoryRepository,
     private groupRepository: IGroupRepository,
-    private userCourseRepository: UserCourseRepository
+    private userCourseRepository: UserCourseRepository,
+    private userGroupRepository: UserGroupRepository
   ) {
     console.log('CreateCategoryWithGroupsUseCase: Initialized.');
   }
@@ -64,6 +67,56 @@ export class CreateCategoryWithGroupsUseCase {
     const createdGroups = await this.groupRepository.createMultipleGroups(groups);
     console.log(`✅ ${createdGroups.length} grupos creados automáticamente`);
 
+    // 4. Si el método es 'random', asignar estudiantes automáticamente
+    if (params.groupingMethod === 'random') {
+      await this.assignStudentsRandomly(enrolledUsers, createdGroups, params.maxGroupSize);
+    }
+
     return { category: createdCategory, groups: createdGroups };
+  }
+
+  /**
+   * Asigna estudiantes de manera aleatoria a los grupos, llenando uno por uno hasta completarlos.
+   */
+  private async assignStudentsRandomly(
+    students: any[],
+    groups: Group[],
+    maxGroupSize: number
+  ): Promise<void> {
+    console.log('🎲 Iniciando asignación aleatoria de estudiantes...');
+
+    // Copiar y mezclar aleatoriamente el array de estudiantes
+    const shuffledStudents = [...students].sort(() => Math.random() - 0.5);
+    console.log(`📋 ${shuffledStudents.length} estudiantes para asignar`);
+
+    let currentGroupIndex = 0;
+    let studentsInCurrentGroup = 0;
+
+    for (const student of shuffledStudents) {
+      const currentGroup = groups[currentGroupIndex];
+      
+      // Crear la asignación del estudiante al grupo
+      const userGroup = new UserGroup({
+        userId: student.userId,
+        groupId: currentGroup.id!,
+      });
+
+      try {
+        await this.userGroupRepository.createUserGroup(userGroup);
+        studentsInCurrentGroup++;
+        console.log(`✅ Estudiante ${student.userId} asignado a Grupo ${currentGroup.numeration}`);
+
+        // Si el grupo actual se llenó, pasar al siguiente
+        if (studentsInCurrentGroup >= maxGroupSize && currentGroupIndex < groups.length - 1) {
+          console.log(`🔄 Grupo ${currentGroup.numeration} lleno, pasando al siguiente...`);
+          currentGroupIndex++;
+          studentsInCurrentGroup = 0;
+        }
+      } catch (e) {
+        console.error(`❌ Error asignando estudiante ${student.userId}:`, e);
+      }
+    }
+
+    console.log('✅ Asignación aleatoria completada');
   }
 }

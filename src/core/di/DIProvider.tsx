@@ -145,24 +145,25 @@ export function DIProvider({ children }: { children: React.ReactNode }) {
             .register(TOKENS.GroupRepo, groupRepo)
             .register(TOKENS.GroupUseCases, groupUseCases);
 
-        // Use Case especial que combina categorías y grupos
-        const createCategoryWithGroupsUC = new CreateCategoryWithGroupsUseCase(
-            categoryRepo,
-            groupRepo,
-            userCourseRepo
-        );
-        c.register(TOKENS.CreateCategoryWithGroupsUC, createCategoryWithGroupsUC);
-
         // ==========================================
         // 6. REGISTROS DE USER_GROUPS
         // ==========================================
         const userGroupDS = new UserGroupRobleDataSource();
         const userGroupRepo = new UserGroupRepositoryImpl(userGroupDS);
         const userGroupUseCases = new UserGroupUseCases(userGroupRepo, groupRepo);
-
-        c.register(TOKENS.UserGroupDataSource, userGroupDS)
+        c
+            .register(TOKENS.UserGroupDataSource, userGroupDS)
             .register(TOKENS.UserGroupRepo, userGroupRepo)
             .register(TOKENS.UserGroupUseCases, userGroupUseCases);
+
+        // Use Case especial que combina categorías y grupos (debe ir después de user_groups)
+        const createCategoryWithGroupsUC = new CreateCategoryWithGroupsUseCase(
+            categoryRepo,
+            groupRepo,
+            userCourseRepo,
+            userGroupRepo
+        );
+        c.register(TOKENS.CreateCategoryWithGroupsUC, createCategoryWithGroupsUC);
 
         return c;
     }, []);
