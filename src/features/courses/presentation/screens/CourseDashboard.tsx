@@ -1,4 +1,3 @@
-import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Appbar, Button, Dialog, Portal, Snackbar, Text, useTheme } from 'react-native-paper';
@@ -16,15 +15,17 @@ import { JoinCourseDialog } from '../components/JoinCourseDialog';
 import { useCourses } from '../context/CourseContext';
 
 export interface CourseFormData {
-  id?: string; 
+  id?: string;
   name: string;
   code: string;
   maxStudents: number;
 }
 
+// --- Pestaña "Mis Cursos" (Profesor) ---
 const TeachingTab = () => {
   const { teacherCourses, loading, error, loadTeacherCourses, addCourse, updateCourseInList, deleteCourseFromList, canCreateMore } = useCourses();
   const { user } = useAuth(); 
+
   const [formVisible, setFormVisible] = useState(false);
   const [courseToEdit, setCourseToEdit] = useState<Course | undefined>(undefined);
   const [deleteVisible, setDeleteVisible] = useState(false);
@@ -51,23 +52,20 @@ const TeachingTab = () => {
     setDeleteVisible(true);
   };
 
-  const handleFormSubmit = async (data: CourseFormData) => { 
+  const handleFormSubmit = async (data: CourseFormData) => {
     if (!user?.id) {
       setSnackbarMessage("Error: Usuario no autenticado.");
       setFormVisible(false);
       return;
     }
-    
     try {
-      if (data.id) { 
-        if (!courseToEdit) return; 
-
+      if (data.id) {
+        if (!courseToEdit) return;
         const updatedCourse = courseToEdit.copyWith({
           name: data.name,
           code: data.code,
           maxStudents: data.maxStudents,
         });
-
         await updateCourseInList(updatedCourse);
         setSnackbarMessage("Curso actualizado correctamente");
       } else {
@@ -75,11 +73,10 @@ const TeachingTab = () => {
           name: data.name,
           code: data.code,
           maxStudents: data.maxStudents,
-          teacherId: user.id, 
+          teacherId: user.id,
           createdAt: new Date(),
         });
-        
-        await addCourse(newCourse); 
+        await addCourse(newCourse);
         setSnackbarMessage("Curso creado correctamente");
       }
     } catch (e: any) {
@@ -99,24 +96,15 @@ const TeachingTab = () => {
     setDeleteVisible(false);
   };
 
-  if (loading && teacherCourses.length === 0) {
-    return <ActivityIndicator style={styles.centered} />;
-  }
-  if (error) {
-    return <ErrorState onRetry={loadTeacherCourses} error={error} />;
-  }
-  if (teacherCourses.length === 0) {
-    return <EmptyTeachingState onCreateCourse={openCreateForm} />;
-  }
+  if (loading && teacherCourses.length === 0) return <ActivityIndicator style={styles.centered} />;
+  if (error) return <ErrorState onRetry={loadTeacherCourses} error={error} />;
 
   return (
     <View style={styles.tabContainer}>
-      <Button icon="plus" mode="contained" onPress={openCreateForm} style={styles.createButton}>
-        Crear Curso
-      </Button>
       <FlatList
         data={teacherCourses}
         keyExtractor={(item) => item.id!}
+        ListEmptyComponent={<EmptyTeachingState/>}
         renderItem={({ item }) => (
           <CourseCard
             course={item}
@@ -124,12 +112,16 @@ const TeachingTab = () => {
             onDelete={openDeleteDialog}
           />
         )}
+        contentContainerStyle={{ paddingBottom: 100 }}
       />
+      <Button icon="plus" mode="contained" onPress={openCreateForm} style={styles.createButton}>
+        {teacherCourses.length === 0 ? "Crear Primer Curso" : "Nuevo Curso"}
+      </Button>
 
       <CourseFormDialog
         visible={formVisible}
         onDismiss={() => setFormVisible(false)}
-        onSubmit={handleFormSubmit} 
+        onSubmit={handleFormSubmit}
         course={courseToEdit}
       />
 
@@ -149,7 +141,8 @@ const TeachingTab = () => {
       <Snackbar
         visible={!!snackbarMessage}
         onDismiss={() => setSnackbarMessage(null)}
-        duration={3000}>
+        duration={3000}
+      >
         {snackbarMessage}
       </Snackbar>
     </View>
@@ -166,55 +159,35 @@ const EnrolledTab = () => {
   const [joinVisible, setJoinVisible] = useState(false);
 
   useEffect(() => {
-    if (user?.id) {
-      console.log("EnrolledTab: Cargando cursos para usuario:", user.id);
-      fetchUserCourses(user.id);
-    }
+    if (user?.id) fetchUserCourses(user.id);
   }, [user?.id, fetchUserCourses]);
 
-  // Cargar los detalles completos de los cursos cuando los IDs cambian
   useEffect(() => {
     const loadCourseDetails = async () => {
       if (state.enrolledCourses.length > 0) {
         try {
           const courseIds = state.enrolledCourses.map(uc => uc.courseId);
           const courses = await loadCoursesByIds(courseIds);
-          
-          // Filtrar cursos donde el usuario NO es el profesor
-          const studentCourses = courses.filter(course => course.teacherId !== user?.id);
-          setEnrolledCourses(studentCourses);
+          setEnrolledCourses(courses.filter(course => course.teacherId !== user?.id));
         } catch (error) {
-          console.error("Error cargando detalles de cursos:", error);
+          console.error(error);
         }
-      } else {
-        setEnrolledCourses([]);
-      }
+      } else setEnrolledCourses([]);
     };
-    
     loadCourseDetails();
   }, [state.enrolledCourses, loadCoursesByIds, user?.id]);
 
   const handleJoinSuccess = () => {
-    console.log("Join exitoso, recargando cursos del usuario");
-    if (user?.id) {
-      fetchUserCourses(user.id);
-    }
+    if (user?.id) fetchUserCourses(user.id);
   };
 
-  if (state.isLoading) {
-    return <ActivityIndicator style={styles.centered} />;
-  }
-
-  if (state.error) {
-    return (
-      <View style={styles.centered}>
-        <Text>Error: {state.error}</Text>
-        <Button onPress={() => user?.id && fetchUserCourses(user.id)}>
-          Reintentar
-        </Button>
-      </View>
-    );
-  }
+  if (state.isLoading) return <ActivityIndicator style={styles.centered} />;
+  if (state.error) return (
+    <View style={styles.centered}>
+      <Text>Error: {state.error}</Text>
+      <Button onPress={() => user?.id && fetchUserCourses(user.id)}>Reintentar</Button>
+    </View>
+  );
 
   return (
     <View style={styles.tabContainer}>
@@ -226,13 +199,12 @@ const EnrolledTab = () => {
       >
         Unirse al Curso
       </Button>
-      {enrolledCourses.length === 0 ? (
-        <EmptyStudentState />
-      ) : (
+      {enrolledCourses.length === 0 ? <EmptyStudentState /> : (
         <FlatList
           data={enrolledCourses}
           keyExtractor={(item) => item.id!}
           renderItem={({ item }) => <CourseCard course={item} />}
+          contentContainerStyle={{ paddingBottom: 100 }}
         />
       )}
       <JoinCourseDialog
@@ -246,12 +218,10 @@ const EnrolledTab = () => {
 
 // --- Componente Principal (Dashboard) ---
 export const CourseDashboardScreen = () => {
-  const navigation = useNavigation<any>();
   const { logout } = useAuth();
   const theme = useTheme();
-
-  const [index, setIndex] = React.useState(0);
-  const [routes] = React.useState([
+  const [index, setIndex] = useState(0);
+  const [routes] = useState([
     { key: 'teaching', title: 'Mis Cursos' },
     { key: 'enrolled', title: 'Cursos Inscritos' },
   ]);
@@ -261,26 +231,20 @@ export const CourseDashboardScreen = () => {
     enrolled: EnrolledTab,
   });
 
-  const handleLogout = () => {
-    logout();
-  };
-
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
         <MaterialCommunityIcons name="school" size={28} color="#fff" style={{ marginLeft: 16 }} />
         <Appbar.Content title="JC Academy" titleStyle={{ color: '#fff', fontWeight: 'bold' }} />
-        <Button mode="text" onPress={handleLogout} textColor="#fff">
-          Salir
-        </Button>
+        <Button mode="text" onPress={logout} textColor="#fff">Salir</Button>
       </Appbar.Header>
       <TabView
         navigationState={{ index, routes }}
         renderScene={renderScene}
         onIndexChange={setIndex}
         renderTabBar={props => (
-          <TabBar 
-            {...props} 
+          <TabBar
+            {...props}
             indicatorStyle={{ backgroundColor: theme.colors.primary }}
             style={{ backgroundColor: theme.colors.surface }}
             activeColor={theme.colors.primary}
@@ -293,17 +257,7 @@ export const CourseDashboardScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  tabContainer: {
-    flex: 1,
-    paddingTop: 16,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  createButton: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-  },
+  tabContainer: { flex: 1, paddingTop: 16 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  createButton: { marginHorizontal: 16, marginBottom: 8 },
 });

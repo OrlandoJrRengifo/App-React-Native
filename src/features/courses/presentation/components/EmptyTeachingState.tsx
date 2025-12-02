@@ -1,14 +1,11 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Icon, Text } from 'react-native-paper';
+import { Icon, Text } from 'react-native-paper';
 
-export const EmptyTeachingState = ({ onCreateCourse }: { onCreateCourse: () => void }) => (
+export const EmptyTeachingState = () => (
   <View style={styles.container}>
     <Icon source="book-outline" size={48} color="#999" />
     <Text style={styles.text}>Aún no tienes cursos</Text>
-    <Button mode="contained" onPress={onCreateCourse} style={styles.button}>
-      Crear Curso
-    </Button>
   </View>
 );
 

@@ -1,6 +1,3 @@
-/**
- * @fileoverview Pantalla que muestra la lista de categorías de un curso.
- */
 import { useAuth } from '@/src/features/auth/presentation/context/authContext';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
@@ -14,7 +11,7 @@ import { useCategories } from '../context/CategoryContext';
 interface CategoriesListPageProps {
   courseId: string;
   courseName: string;
-  teacherId: string; // ID del profesor dueño del curso
+  teacherId: string;
 }
 
 export const CategoriesListPage = ({ courseId, courseName, teacherId }: CategoriesListPageProps) => {
@@ -27,15 +24,9 @@ export const CategoriesListPage = ({ courseId, courseName, teacherId }: Categori
   const [categoryToEdit, setCategoryToEdit] = useState<Category | undefined>(undefined);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | undefined>(undefined);
 
-  // Verificar si el usuario actual es el profesor del curso
   const isTeacher = user?.id === teacherId;
 
   useEffect(() => {
-    console.log('🎬 CategoriesListPage useEffect ejecutándose');
-    console.log('📝 courseId:', courseId);
-    console.log('👤 teacherId:', teacherId);
-    console.log('👨‍🏫 isTeacher:', isTeacher);
-    console.log('📚 Llamando loadCategoriesByCourse...');
     loadCategoriesByCourse(courseId);
   }, [courseId]);
 
@@ -55,8 +46,7 @@ export const CategoriesListPage = ({ courseId, courseName, teacherId }: Categori
   };
 
   const handleCategoryPress = (category: Category) => {
-    console.log('📂 Categoría seleccionada:', category.name);
-    navigation.navigate('GroupsList', {
+    navigation.navigate('CategoryDetail', {
       categoryId: category.id,
       categoryName: category.name,
       maxGroupSize: category.maxGroupSize,
@@ -69,14 +59,10 @@ export const CategoriesListPage = ({ courseId, courseName, teacherId }: Categori
   const handleFormSubmit = async (data: CategoryFormData) => {
     try {
       if (data.id) {
-        // Editar categoría existente (solo nombre)
         if (!categoryToEdit) return;
-        const updatedCategory = categoryToEdit.copyWith({
-          name: data.name,
-        });
+        const updatedCategory = categoryToEdit.copyWith({ name: data.name });
         await updateCategory(updatedCategory);
       } else {
-        // Crear nueva categoría
         await createCategory({
           courseId,
           name: data.name,
@@ -100,80 +86,54 @@ export const CategoriesListPage = ({ courseId, courseName, teacherId }: Categori
     setDeleteVisible(false);
   };
 
-  // Logs de debugging
-  console.log('🔍 Estado actual en CategoriesListPage:');
-  console.log('  - loading:', loading);
-  console.log('  - error:', error);
-  console.log('  - categories.length:', categories.length);
-  console.log('  - categories:', categories);
-
-  if (loading && categories.length === 0) {
-    console.log('🔄 Mostrando loading...');
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" />
-        <Text style={{ marginTop: 16 }}>Cargando categorías...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    console.log('❌ Mostrando error:', error);
-    return (
-      <View style={styles.centered}>
-        <Text style={{ color: 'red' }}>{error}</Text>
-        <Button mode="contained" onPress={() => loadCategoriesByCourse(courseId)} style={{ marginTop: 16 }}>
-          Reintentar
-        </Button>
-      </View>
-    );
-  }
-
-  if (categories.length === 0) {
-    console.log('📭 Mostrando vista vacía (sin categorías)');
-    return (
-      <View style={styles.centered}>
-        <Text variant="titleMedium" style={styles.emptyTitle}>
-          No hay categorías aún
-        </Text>
-        <Text variant="bodyMedium" style={styles.emptySubtitle}>
-          {isTeacher
-            ? 'Crea la primera categoría para este curso'
-            : 'El profesor aún no ha creado categorías'}
-        </Text>
-        {isTeacher && (
-          <Button mode="contained" onPress={openCreateForm} style={{ marginTop: 16 }}>
-            Crear Primera Categoría
-          </Button>
-        )}
-      </View>
-    );
-  }
-
-  console.log('✅ Renderizando lista con', categories.length, 'categorías');
   return (
     <View style={styles.container}>
-      <FlatList
-        data={categories}
-        keyExtractor={(item) => item.id!}
-        renderItem={({ item }) => (
-          <CategoryCard
-            category={item}
-            onEdit={isTeacher ? openEditForm : undefined}
-            onDelete={isTeacher ? openDeleteDialog : undefined}
-            onPress={handleCategoryPress} // Agregar manejador de presión
-            isTeacher={isTeacher}
-          />
-        )}
-        contentContainerStyle={styles.listContent}
-      />
+      {loading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" />
+          <Text style={{ marginTop: 16 }}>Cargando categorías...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.centered}>
+          <Text style={{ color: 'red' }}>{error}</Text>
+          <Button mode="contained" onPress={() => loadCategoriesByCourse(courseId)} style={{ marginTop: 16 }}>
+            Reintentar
+          </Button>
+        </View>
+      ) : categories.length === 0 ? (
+        <View style={styles.centered}>
+          <Text variant="titleMedium" style={styles.emptyTitle}>
+            No hay categorías aún
+          </Text>
+          <Text variant="bodyMedium" style={styles.emptySubtitle}>
+            {isTeacher
+              ? 'Crea la primera categoría para este curso'
+              : 'El profesor aún no ha creado categorías'}
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={categories}
+          keyExtractor={(item) => item.id!}
+          renderItem={({ item }) => (
+            <CategoryCard
+              category={item}
+              onEdit={isTeacher ? openEditForm : undefined}
+              onDelete={isTeacher ? openDeleteDialog : undefined}
+              onPress={handleCategoryPress}
+              isTeacher={isTeacher}
+            />
+          )}
+          contentContainerStyle={styles.listContent}
+        />
+      )}
 
       {isTeacher && (
         <FAB
           icon="plus"
           style={styles.fab}
           onPress={openCreateForm}
-          label="Nueva Categoría"
+          label={categories.length === 0 ? 'Crear Primera Categoría' : 'Nueva Categoría'}
         />
       )}
 
@@ -194,9 +154,7 @@ export const CategoriesListPage = ({ courseId, courseName, teacherId }: Categori
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={() => setDeleteVisible(false)}>Cancelar</Button>
-            <Button onPress={handleDeleteConfirm} textColor="red">
-              Eliminar
-            </Button>
+            <Button onPress={handleDeleteConfirm} textColor="red">Eliminar</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -205,31 +163,10 @@ export const CategoriesListPage = ({ courseId, courseName, teacherId }: Categori
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  listContent: {
-    paddingVertical: 8,
-    paddingBottom: 80,
-  },
-  emptyTitle: {
-    marginBottom: 8,
-    fontWeight: '600',
-  },
-  emptySubtitle: {
-    textAlign: 'center',
-    opacity: 0.7,
-  },
-  fab: {
-    position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
-  },
+  container: { flex: 1 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 },
+  listContent: { paddingVertical: 8, paddingBottom: 80 },
+  emptyTitle: { marginBottom: 8, fontWeight: '600' },
+  emptySubtitle: { textAlign: 'center', opacity: 0.7 },
+  fab: { position: 'absolute', margin: 16, right: 0, bottom: 0 },
 });
