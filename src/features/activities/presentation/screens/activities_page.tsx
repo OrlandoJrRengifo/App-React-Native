@@ -31,6 +31,7 @@ type ActivitiesListRouteParams = {
   ActivitiesList: {
     categoryId: string;
     categoryName?: string;
+    teacherId?: string; 
   };
 };
 
@@ -39,7 +40,7 @@ type ActivitiesListScreenRouteProp = RouteProp<ActivitiesListRouteParams, 'Activ
 export const ActivitiesListPage = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<ActivitiesListScreenRouteProp>();
-  const { categoryId, categoryName } = route.params;
+  const { categoryId, categoryName, teacherId } = route.params;
   const theme = useTheme();
 
   const { user } = useAuth();
@@ -75,16 +76,18 @@ export const ActivitiesListPage = () => {
     checkOwnership();
   }, [categoryId]);
 
+
   const checkOwnership = async () => {
     try {
-      const category = categories.find((c) => c.id === categoryId);
-      if (!category) return;
+      const isTeacher = user?.id === teacherId;
 
-      const owner = await isOwnerOfCourse(category.courseId);
+      // Ahora la propiedad 'owner' es directamente si el usuario es el profesor
+      const owner = isTeacher;
+
       setIsOwner(owner);
-      console.log('👨‍🏫 isOwner:', owner);
+      console.log("👨‍🏫 isOwner:", owner);
     } catch (e) {
-      console.error('Error checking ownership:', e);
+      console.error("Error checking ownership:", e);
     }
   };
 
@@ -312,9 +315,13 @@ export const ActivitiesListPage = () => {
         contentContainerStyle={styles.listContent}
       />
 
-      {isOwner && (
-        <FAB icon="plus" style={styles.fab} onPress={openCreateForm} label="Nueva Actividad" />
-      )}
+      <FAB
+        icon="plus"
+        style={styles.fab}
+        onPress={openCreateForm}
+        label="Nueva Actividad"
+        visible={isOwner}
+      />
 
       {/* Diálogo de crear actividad */}
       <Portal>
