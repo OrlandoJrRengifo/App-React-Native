@@ -45,10 +45,19 @@ export const TOKENS = {
   UserGroupRepo: Symbol("UserGroupRepo"),
   UserGroupUseCases: Symbol("UserGroupUseCases"),
   
-    // --- ACTIVITIES ---  
+  // --- ACTIVITIES ---  
   ActivityDataSource: Symbol("ActivityDataSource"),
   ActivityRepo: Symbol("ActivityRepo"),
   ActivityUseCases: Symbol("ActivityUseCases"),
+
+  // --- ASSESSMENTS ---
+  AssessmentDataSource: Symbol("AssessmentDataSource"),
+  AssessmentRepo: Symbol("AssessmentRepo"),
+  AssessmentUseCases: Symbol("AssessmentUseCases"),
+
+  // --- FAKE_USER_USECASES ---
+  FakeUserDataSource: Symbol("FakeUserDataSource"),
+  FakeUserUseCases: Symbol("FakeUserUseCases"),
 } as const;
 
 export const FakeUserRepoToken = TOKENS.FakeUserRepo;
