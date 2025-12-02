@@ -23,6 +23,7 @@ import { CourseUseCases } from "@/src/features/courses/domain/usecases/CourseUse
 // --- CLASES CONCRETAS NECESARIAS PARA FAKE_USERS ---
 import { FakeUserRobleSource } from "@/src/features/fake_users/data/datasources/FakeUserRobleSource";
 import { FakeUserRepositoryImpl } from "@/src/features/fake_users/data/repositories/FakeUserRepositoryImpl";
+import { FakeUserUseCase } from "@/src/features/fake_users/domain/usecases/FakeUserUseCase";
 // ---------------------------------------------------
 
 // --- CLASES CONCRETAS NECESARIAS PARA USER_COURSES ---
@@ -56,6 +57,12 @@ import { ActivityRepositoryImpl } from "@/src/features/activities/data/repositor
 import { ActivityUseCases } from "@/src/features/activities/domain/usecases/activity_usecase";
 // ---------------------------------------------------
 
+// --- CLASES CONCRETAS NECESARIAS PARA ASSESSMENTS ---
+import { AssessmentRobleDataSource } from "@/src/features/assessments/data/datasources/AssessmentRobleDataSource";
+import { AssessmentRepositoryImpl } from "@/src/features/assessments/data/repositories/AssessmentRepositoryImpl";
+import { AssessmentUseCases } from "@/src/features/assessments/domain/usecases/AssessmentUseCases";
+// ---------------------------------------------------
+
 
 const DIContext = createContext<Container | null>(null);
 
@@ -86,7 +93,11 @@ export function DIProvider({ children }: { children: React.ReactNode }) {
         // ==========================================
         const fakeUserDS = new FakeUserRobleSource(prefs);
         const fakeUserRepo = new FakeUserRepositoryImpl(fakeUserDS);
-        c.register(TOKENS.FakeUserRepo, fakeUserRepo);
+        const fakeUserUseCases = new FakeUserUseCase(fakeUserRepo);
+        
+        c.register(TOKENS.FakeUserDataSource, fakeUserDS)
+            .register(TOKENS.FakeUserRepo, fakeUserRepo)
+            .register(TOKENS.FakeUserUseCases, fakeUserUseCases);
 
         c.register(TOKENS.AuthRemoteDS, authDS)
             .register(TOKENS.AuthRepo, authRepo)
@@ -181,6 +192,17 @@ export function DIProvider({ children }: { children: React.ReactNode }) {
         c.register(TOKENS.ActivityDataSource, activityDS)
             .register(TOKENS.ActivityRepo, activityRepo)
             .register(TOKENS.ActivityUseCases, activityUseCases);
+
+        // ==========================================
+        // 8. REGISTROS DE ASSESSMENTS
+        // ==========================================
+        const assessmentDS = new AssessmentRobleDataSource(prefs);
+        const assessmentRepo = new AssessmentRepositoryImpl(assessmentDS);
+        const assessmentUseCases = new AssessmentUseCases(assessmentRepo);
+
+        c.register(TOKENS.AssessmentDataSource, assessmentDS)
+            .register(TOKENS.AssessmentRepo, assessmentRepo)
+            .register(TOKENS.AssessmentUseCases, assessmentUseCases);
 
         return c;
     }, []);

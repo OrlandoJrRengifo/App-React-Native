@@ -1,6 +1,10 @@
 
 import { useDI } from '@/src/core/di/DIProvider';
 import { TOKENS } from '@/src/core/di/tokens';
+import { Assessment } from '@/src/features/assessments/domain/entities/Assessment';
+import { AssessmentUseCases } from '@/src/features/assessments/domain/usecases/AssessmentUseCases';
+import { IGroupRepository } from '@/src/features/groups/domain/repositories/IGroupRepository';
+import { UserGroupRepository } from '@/src/features/user_groups/domain/repositories/UserGroupRepository';
 import React, { createContext, ReactNode, useContext, useState } from 'react';
 import { Activity } from '../../domain/entities/activity';
 import { ActivityUseCases } from '../../domain/usecases/activity_usecase';
@@ -11,7 +15,7 @@ interface IActivityContext {
 
   loadActivities: (categoryId: string) => Promise<void>;
   createActivity: (categoryId: string, name: string) => Promise<void>;
-  activateActivity: (activityId: string) => Promise<boolean>;
+  activateActivity: (activityId: string, categoryId: string) => Promise<boolean>;
   updateActivityName: (activityId: string, newName: string) => Promise<boolean>;
   deleteActivity: (activityId: string) => Promise<boolean>;
 }
@@ -25,6 +29,9 @@ interface ActivityProviderProps {
 export const ActivityProvider = ({ children }: ActivityProviderProps) => {
   const container = useDI();
   const useCase = container.resolve(TOKENS.ActivityUseCases) as ActivityUseCases;
+  const assessmentUseCases = container.resolve(TOKENS.AssessmentUseCases) as AssessmentUseCases;
+  const groupRepo = container.resolve(TOKENS.GroupRepo) as IGroupRepository;
+  const userGroupRepo = container.resolve(TOKENS.UserGroupRepo) as UserGroupRepository;
 
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,9 +57,49 @@ export const ActivityProvider = ({ children }: ActivityProviderProps) => {
   };
 
 
-  const activateActivity = async (activityId: string): Promise<boolean> => {
+  const activateActivity = async (activityId: string, categoryId: string): Promise<boolean> => {
     const success = await useCase.activateActivity(activityId);
     if (!success) return false;
+
+    // Crear los assessments automáticamente
+    try {
+      // 1. Obtener todos los grupos de la categoría
+      const groups = await groupRepo.getGroupsByCategory(categoryId);
+      
+      if (groups.length > 0) {
+        // 2. Para cada grupo, obtener sus miembros y crear assessments
+        for (const group of groups) {
+          if (!group.id) continue;
+
+          const userGroups = await userGroupRepo.getUserGroupsByGroupId(group.id);
+          const memberIds = userGroups.map(ug => ug.userId);
+
+          // 3. Crear assessments: cada miembro califica a los demás
+          for (const raterId of memberIds) {
+            for (const toRateId of memberIds) {
+              // No crear assessment para que se califique a sí mismo
+              if (raterId === toRateId) continue;
+
+              const assessment = new Assessment({
+                activityId: activityId,
+                rater: raterId,
+                toRate: toRateId,
+                visibility: "private",
+                punctuality: null,
+                contributions: null,
+                commitment: null,
+                attitude: null,
+              });
+
+              await assessmentUseCases.createAssessment(assessment);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error creating assessments:", error);
+      // No falla la activación si falla la creación de assessments
+    }
 
     setActivities(prev =>
       prev.map(a => (a.id === activityId ? a.copyWith({ activated: true }) : a))
