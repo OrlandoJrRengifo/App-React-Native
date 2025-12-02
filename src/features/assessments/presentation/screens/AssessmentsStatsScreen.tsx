@@ -1,273 +1,150 @@
-import { useDI } from '@/src/core/di/DIProvider';
-import { TOKENS } from '@/src/core/di/tokens';
-import { FakeUserUseCase } from '@/src/features/fake_users/domain/usecases/FakeUserUseCase';
-import { RouteProp, useRoute } from '@react-navigation/native';
-import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Card, DataTable, Text, useTheme } from 'react-native-paper';
-import { useAssessments } from '../context/AssessmentContext';
+// src/features/assessments/presentation/screens/AssessmentsStatsScreen.tsx
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, FlatList, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { useAssessment } from "../context/assessment_context";
 
-type AssessmentStatsRouteParams = {
-  AssessmentStats: {
-    activityId: string;
-    activityName: string;
-    courseId: string;
-  };
-};
+/*
+  Para resolver nombres de usuarios necesitamos getUsersByIds.
+  Reutilizamos el mismo approach que en la lista:
+*/
+import { LocalPreferencesAsyncStorage } from "@/src/core/LocalPreferencesAsyncStorage";
 
-type AssessmentStatsScreenRouteProp = RouteProp<AssessmentStatsRouteParams, 'AssessmentStats'>;
+// Crear instancia que requiere tu fuente de datos
+const localPreferences = LocalPreferencesAsyncStorage.getInstance();
 
-interface StudentStats {
+// Pasar prefs al constructor, como tu clase lo pide
+const dataSource = new FakeUserRobleSource(localPreferences);
+
+// Crear usecase
+const fakeUserUseCase = new FakeUserUseCase(dataSource);
+
+// Usar hook
+const { getUsersByIds } = useFakeUsers(fakeUserUseCase);
+
+import { FakeUserRobleSource } from "../../../fake_users/data/datasources/FakeUserRobleSource";
+import { FakeUserUseCase } from "../../../fake_users/domain/usecases/FakeUserUseCase";
+import { useFakeUsers } from "../../../fake_users/presentation/context/useFakeUsers";
+
+type UserStats = {
   userId: string;
   userName: string;
   punctuality: number;
   contributions: number;
   commitment: number;
   attitude: number;
-  overall: number;
-}
+  general: number;
+};
 
-export const AssessmentsStatsScreen = () => {
-  const route = useRoute<AssessmentStatsScreenRouteProp>();
-  const { activityId, activityName } = route.params;
-  const theme = useTheme();
-  const container = useDI();
-  const fakeUserUseCases = container.resolve(TOKENS.FakeUserUseCases) as FakeUserUseCase;
+export default function AssessmentsStatsScreen({ route }: any) {
+  const { activityId } = route.params;
+  const { getAssessmentsByActivity, getAverageRatings } = useAssessment();
 
-  const { assessments, loading, loadAssessmentsByActivity, getAverageRatings } = useAssessments();
-  const [studentStats, setStudentStats] = useState<StudentStats[]>([]);
-  const [loadingStats, setLoadingStats] = useState(false);
+  const dataSource = new FakeUserRobleSource(localPreferences); // ajustar
+  const fakeUserUseCase = new FakeUserUseCase(dataSource);
+  const { getUsersByIds } = useFakeUsers(fakeUserUseCase);
 
-  useEffect(() => {
-    loadAssessmentsByActivity(activityId);
-  }, [activityId]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<UserStats[]>([]);
+  const [overall, setOverall] = useState(0);
 
   useEffect(() => {
-    if (assessments.length > 0) {
-      calculateStats();
-    }
-  }, [assessments]);
+    let mounted = true;
+    async function load() {
+      setLoading(true);
+      try {
+        const assessments = await getAssessmentsByActivity(activityId);
 
-  const calculateStats = async () => {
-    setLoadingStats(true);
-    try {
-      // Get unique students being rated
-      const uniqueStudents = [...new Set(assessments.map(a => a.toRate))];
+        // Agrupar por toRate
+        const grouped: Record<string, string[]> = {};
+        assessments.forEach((a: any) => {
+          grouped[a.toRate] = grouped[a.toRate] ?? [];
+          grouped[a.toRate].push(a.id!);
+        });
 
-      const stats: StudentStats[] = [];
-      for (const studentId of uniqueStudents) {
-        const avgRatings = await getAverageRatings(activityId, studentId);
-        
-        // Get student name
-        let userName = `Usuario ${studentId.substring(0, 8)}`;
-        try {
-          const fakeUser = await fakeUserUseCases.getUserByAuthId(studentId);
-          if (fakeUser) {
-            userName = fakeUser.name;
-          }
-        } catch (error) {
-          console.error('Error getting user name:', error);
-        }
-        
-        if (avgRatings) {
-          stats.push({
-            userId: studentId,
-            userName,
-            punctuality: avgRatings.punctuality,
-            contributions: avgRatings.contributions,
-            commitment: avgRatings.commitment,
-            attitude: avgRatings.attitude,
-            overall: avgRatings.general,
+        const userIds = Object.keys(grouped);
+        const users = userIds.length > 0 ? await getUsersByIds(userIds) : [];
+
+        const results: UserStats[] = [];
+        for (const u of users) {
+          const avg = await getAverageRatings(activityId, u.authId);
+          results.push({
+            userId: u.authId,
+            userName: u.name,
+            punctuality: avg.punctuality,
+            contributions: avg.contributions,
+            commitment: avg.commitment,
+            attitude: avg.attitude,
+            general: avg.general,
           });
         }
+
+        if (!mounted) return;
+        setStats(results);
+        const overallAvg = results.length > 0 ? results.map((r) => r.general).reduce((a, b) => a + b, 0) / results.length : 0;
+        setOverall(overallAvg);
+      } catch (e) {
+        console.warn("Error loading stats", e);
+      } finally {
+        if (mounted) setLoading(false);
       }
-
-      // Sort by overall rating descending
-      stats.sort((a, b) => b.overall - a.overall);
-      setStudentStats(stats);
-    } catch (error) {
-      console.error('Error calculating stats:', error);
-    } finally {
-      setLoadingStats(false);
     }
-  };
+    load();
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activityId]);
 
-  // Calculate course averages
-  const courseAverages = studentStats.length > 0 ? {
-    punctuality: studentStats.reduce((sum, s) => sum + s.punctuality, 0) / studentStats.length,
-    contributions: studentStats.reduce((sum, s) => sum + s.contributions, 0) / studentStats.length,
-    commitment: studentStats.reduce((sum, s) => sum + s.commitment, 0) / studentStats.length,
-    attitude: studentStats.reduce((sum, s) => sum + s.attitude, 0) / studentStats.length,
-    overall: studentStats.reduce((sum, s) => sum + s.overall, 0) / studentStats.length,
-  } : null;
-
-  if (loading || loadingStats) {
+  if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" />
-        <Text style={{ marginTop: 16 }}>Cargando estadísticas...</Text>
+      <View style={styles.center}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  if (!stats || stats.length === 0) {
+    return (
+      <View style={styles.center}>
+        <Text>No stats available</Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.header}>
-        <Text variant="headlineMedium" style={styles.title}>
-          Estadísticas - {activityName}
-        </Text>
-        <Text variant="bodyMedium" style={styles.subtitle}>
-          Promedios de evaluación por estudiante
-        </Text>
-      </View>
-
-      {courseAverages && (
-        <Card style={styles.summaryCard}>
-          <Card.Content>
-            <Text variant="titleLarge" style={styles.summaryTitle}>
-              Promedios del Curso
-            </Text>
-            <View style={styles.summaryGrid}>
-              <View style={styles.summaryItem}>
-                <Text variant="bodySmall">Puntualidad</Text>
-                <Text variant="titleMedium" style={styles.summaryValue}>
-                  {courseAverages.punctuality.toFixed(2)}
-                </Text>
-              </View>
-              <View style={styles.summaryItem}>
-                <Text variant="bodySmall">Aportes</Text>
-                <Text variant="titleMedium" style={styles.summaryValue}>
-                  {courseAverages.contributions.toFixed(2)}
-                </Text>
-              </View>
-              <View style={styles.summaryItem}>
-                <Text variant="bodySmall">Compromiso</Text>
-                <Text variant="titleMedium" style={styles.summaryValue}>
-                  {courseAverages.commitment.toFixed(2)}
-                </Text>
-              </View>
-              <View style={styles.summaryItem}>
-                <Text variant="bodySmall">Actitud</Text>
-                <Text variant="titleMedium" style={styles.summaryValue}>
-                  {courseAverages.attitude.toFixed(2)}
-                </Text>
-              </View>
-              <View style={styles.summaryItem}>
-                <Text variant="bodySmall">Promedio General</Text>
-                <Text variant="titleLarge" style={[styles.summaryValue, styles.overallValue]}>
-                  {courseAverages.overall.toFixed(2)}
-                </Text>
-              </View>
-            </View>
-          </Card.Content>
-        </Card>
-      )}
-
-      {studentStats.length === 0 ? (
-        <View style={styles.centered}>
-          <Text variant="titleMedium">No hay evaluaciones disponibles</Text>
-          <Text variant="bodySmall" style={{ marginTop: 8, textAlign: 'center' }}>
-            Las estadísticas aparecerán cuando los estudiantes califiquen
-          </Text>
-        </View>
-      ) : (
-        <Card style={styles.tableCard}>
-          <Card.Content>
-            <DataTable>
-              <DataTable.Header>
-                <DataTable.Title>Estudiante</DataTable.Title>
-                <DataTable.Title numeric>Puntual.</DataTable.Title>
-                <DataTable.Title numeric>Aportes</DataTable.Title>
-                <DataTable.Title numeric>Comprom.</DataTable.Title>
-                <DataTable.Title numeric>Actitud</DataTable.Title>
-                <DataTable.Title numeric>General</DataTable.Title>
-              </DataTable.Header>
-
-              <FlatList
-                data={studentStats}
-                keyExtractor={(item) => item.userId}
-                renderItem={({ item }) => (
-                  <DataTable.Row>
-                    <DataTable.Cell>{item.userName}</DataTable.Cell>
-                    <DataTable.Cell numeric>{item.punctuality.toFixed(1)}</DataTable.Cell>
-                    <DataTable.Cell numeric>{item.contributions.toFixed(1)}</DataTable.Cell>
-                    <DataTable.Cell numeric>{item.commitment.toFixed(1)}</DataTable.Cell>
-                    <DataTable.Cell numeric>{item.attitude.toFixed(1)}</DataTable.Cell>
-                    <DataTable.Cell numeric>
-                      <Text style={[styles.overallCell, getOverallColor(item.overall)]}>
-                        {item.overall.toFixed(1)}
-                      </Text>
-                    </DataTable.Cell>
-                  </DataTable.Row>
-                )}
-              />
-            </DataTable>
-          </Card.Content>
-        </Card>
-      )}
-    </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <FlatList
+        data={stats}
+        keyExtractor={(i) => i.userId}
+        ListHeaderComponent={() => (
+          <View style={styles.headerCard}>
+            <Text style={styles.headerTitle}>Promedio</Text>
+            <Text style={styles.headerSubtitle}>Promedio general de todos los estudiantes</Text>
+            <Text style={styles.headerValue}>{overall.toFixed(2)}</Text>
+          </View>
+        )}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={styles.name}>{item.userName}</Text>
+            <Text>Punctuality: {item.punctuality.toFixed(2)}</Text>
+            <Text>Contributions: {item.contributions.toFixed(2)}</Text>
+            <Text>Commitment: {item.commitment.toFixed(2)}</Text>
+            <Text>Attitude: {item.attitude.toFixed(2)}</Text>
+            <View style={{ height: 8 }} />
+            <Text style={{ fontWeight: "bold" }}>Promedio general: {item.general.toFixed(2)}</Text>
+          </View>
+        )}
+      />
+    </SafeAreaView>
   );
-};
-
-const getOverallColor = (value: number) => {
-  if (value >= 4.5) return { color: '#4caf50', fontWeight: 'bold' as const };
-  if (value >= 3.5) return { color: '#ff9800', fontWeight: 'bold' as const };
-  return { color: '#f44336', fontWeight: 'bold' as const };
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  header: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  title: {
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    marginTop: 4,
-    opacity: 0.7,
-  },
-  summaryCard: {
-    margin: 16,
-    elevation: 4,
-  },
-  summaryTitle: {
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
-  },
-  summaryItem: {
-    alignItems: 'center',
-    marginVertical: 8,
-    minWidth: '30%',
-  },
-  summaryValue: {
-    marginTop: 4,
-    fontWeight: 'bold',
-  },
-  overallValue: {
-    color: '#1976d2',
-  },
-  tableCard: {
-    margin: 16,
-    flex: 1,
-  },
-  overallCell: {
-    fontSize: 16,
-  },
+  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  headerCard: { padding: 16, margin: 12, borderRadius: 12, backgroundColor: "#fff", elevation: 2 },
+  headerTitle: { fontSize: 16, fontWeight: "bold" },
+  headerSubtitle: { fontSize: 14, color: "#666", marginTop: 8 },
+  headerValue: { fontSize: 22, fontWeight: "bold", marginTop: 8, textAlign: "right" },
+  card: { padding: 12, marginHorizontal: 8, marginVertical: 6, backgroundColor: "#fff", borderRadius: 8, elevation: 1 },
+  name: { fontSize: 18, fontWeight: "bold", marginBottom: 8 },
 });

@@ -1,12 +1,11 @@
-import { Assessment } from "../entities/Assessment";
+// src/features/assessments/data/datasources/IAssessmentDataSource.ts
+import { Assessment } from "../../domain/entities/Assessment";
 
-export interface IAssessmentRepository {
+export interface IAssessmentDataSource {
   getAssessmentsByActivity(activityId: string): Promise<Assessment[]>;
   getAssessmentsByActivityAndRater(activityId: string, rater: string): Promise<Assessment[]>;
   getAssessmentsByActivityAndToRate(activityId: string, toRate: string): Promise<Assessment[]>;
-  
   createAssessment(assessment: Assessment): Promise<boolean>;
-
   gradeAssessment(
     assessmentId: string,
     punctuality: number,
@@ -14,6 +13,5 @@ export interface IAssessmentRepository {
     commitment: number,
     attitude: number
   ): Promise<boolean>;
-
   getAssessmentsByToRate(toRate: string): Promise<Assessment[]>;
 }

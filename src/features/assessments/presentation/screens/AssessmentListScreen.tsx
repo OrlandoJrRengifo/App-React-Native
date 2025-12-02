@@ -1,289 +1,223 @@
-import { useDI } from '@/src/core/di/DIProvider';
-import { TOKENS } from '@/src/core/di/tokens';
-import { useAuth } from '@/src/features/auth/presentation/context/authContext';
-import { FakeUserUseCase } from '@/src/features/fake_users/domain/usecases/FakeUserUseCase';
-import { RouteProp, useRoute } from '@react-navigation/native';
-import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+// src/features/assessments/presentation/screens/AssessmentListScreen.tsx
+import React, { useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
-    Button,
-    Card,
-    Dialog,
-    Portal,
-    Snackbar,
+    FlatList,
+    Modal,
+    Pressable,
+    SafeAreaView,
+    StyleSheet,
     Text,
-    TextInput,
-    useTheme,
-} from 'react-native-paper';
-import { Assessment } from '../../domain/entities/Assessment';
-import { useAssessments } from '../context/AssessmentContext';
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { Assessment } from "../../domain/entities/Assessment";
+import { useAssessment } from "../context/assessment_context";
 
-type AssessmentListRouteParams = {
-  AssessmentList: {
-    activityId: string;
-    activityName: string;
-  };
+/*
+  IMPORTS RELACIONADOS CON FAKE USERS
+  Ajusta las rutas según tu repo:
+  - FakeUserRobleSource: data source class (export class FakeUserRobleSource ...)
+  - FakeUserUseCase: usecase class
+  - useFakeUsers: hook file que expone useFakeUsers(fakeUserUseCase)
+*/
+import { FakeUserRobleSource } from "../../../fake_users/data/datasources/FakeUserRobleSource";
+import { FakeUserUseCase } from "../../../fake_users/domain/usecases/FakeUserUseCase";
+import { useFakeUsers } from "../../../fake_users/presentation/context/useFakeUsers"; // ajusta ruta
+
+// Si tienes un módulo de preferencias (local storage) inyectable, ajústalo:
+import { LocalPreferencesAsyncStorage } from "@/src/core/LocalPreferencesAsyncStorage";
+
+// Crear instancia que requiere tu fuente de datos
+const localPreferences = LocalPreferencesAsyncStorage.getInstance();
+
+// Pasar prefs al constructor, como tu clase lo pide
+const dataSource = new FakeUserRobleSource(localPreferences);
+
+// Crear usecase
+const fakeUserUseCase = new FakeUserUseCase(dataSource);
+
+// Usar hook
+const { getUsersByIds } = useFakeUsers(fakeUserUseCase);
+
+
+
+import AssessmentRatingModal from "./AssessmentRatingModal";
+
+type Props = {
+  route: { params: { activityId: string; currentUserId: string } };
+  navigation?: any;
 };
 
-type AssessmentListScreenRouteProp = RouteProp<AssessmentListRouteParams, 'AssessmentList'>;
+export default function AssessmentListScreen({ route, navigation }: Props) {
+  const { activityId, currentUserId } = route.params;
+  const { loadAssessmentsByActivityAndRater, assessments, getAverageRatings, gradeAssessment } =
+    useAssessment();
 
-export const AssessmentListScreen = () => {
-  const route = useRoute<AssessmentListScreenRouteProp>();
-  const { activityId, activityName } = route.params;
-  const theme = useTheme();
-  const { user } = useAuth();
-  const container = useDI();
-  const fakeUserUseCases = container.resolve(TOKENS.FakeUserUseCases) as FakeUserUseCase;
+  // fake users controller instanciado localmente (usa tu useFakeUsers hook)
+  const dataSource = new FakeUserRobleSource(localPreferences); // ajustar
+  const fakeUserUseCase = new FakeUserUseCase(dataSource);
+  const { getUsersByIds } = useFakeUsers(fakeUserUseCase);
 
-  const { assessments, loading, loadAssessmentsByActivityAndRater, gradeAssessment } = useAssessments();
-
-  const [gradeDialogVisible, setGradeDialogVisible] = useState(false);
-  const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
-  const [punctuality, setPunctuality] = useState('');
-  const [contributions, setContributions] = useState('');
-  const [commitment, setCommitment] = useState('');
-  const [attitude, setAttitude] = useState('');
-  const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
-  const [userNames, setUserNames] = useState<Map<string, string>>(new Map());
+  const [loading, setLoading] = useState(true);
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const [selected, setSelected] = useState<Assessment | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (user?.id) {
-      loadAssessmentsByActivityAndRater(activityId, user.id);
-    }
-  }, [activityId, user]);
+    let mounted = true;
 
-  // Load user names when assessments change
-  useEffect(() => {
-    const loadUserNames = async () => {
-      const userIds = [...new Set(assessments.map(a => a.toRate))];
-      const names = new Map<string, string>();
-      
-      for (const userId of userIds) {
-        try {
-          const fakeUser = await fakeUserUseCases.getUserByAuthId(userId);
-          if (fakeUser) {
-            names.set(userId, fakeUser.name);
-          } else {
-            names.set(userId, `Usuario ${userId.substring(0, 8)}`);
+    async function load() {
+      setLoading(true);
+      try {
+        // 1) cargar y actualizar context (assessment_context mantiene la lista)
+        await loadAssessmentsByActivityAndRater(activityId, currentUserId);
+
+        // 2) resolver nombres de usuarios (toRate)
+        const ids = Array.from(new Set((assessments || []).map((a) => a.toRate))).filter(Boolean);
+        if (ids.length > 0 && getUsersByIds) {
+          try {
+            const users = await getUsersByIds(ids);
+            if (!mounted) return;
+            const map: Record<string, string> = {};
+            users.forEach((u: any) => {
+              const id = u.authId ?? u.id ?? u.userId;
+              map[id] = u.name ?? u.displayName ?? u.email ?? id;
+            });
+            setUserNames(map);
+          } catch (e) {
+            console.warn("getUsersByIds failed", e);
           }
-        } catch (error) {
-          names.set(userId, `Usuario ${userId.substring(0, 8)}`);
         }
+      } finally {
+        if (mounted) setLoading(false);
       }
-      
-      setUserNames(names);
+    }
+
+    load();
+    return () => {
+      mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activityId, currentUserId]);
 
-    if (assessments.length > 0) {
-      loadUserNames();
-    }
-  }, [assessments]);
+  const list = useMemo(() => assessments ?? [], [assessments]);
 
-  const handleOpenGradeDialog = (assessment: Assessment) => {
-    setSelectedAssessment(assessment);
-    setPunctuality(assessment.punctuality?.toString() || '');
-    setContributions(assessment.contributions?.toString() || '');
-    setCommitment(assessment.commitment?.toString() || '');
-    setAttitude(assessment.attitude?.toString() || '');
-    setGradeDialogVisible(true);
-  };
+  function openRating(assessment: Assessment) {
+    setSelected(assessment);
+  }
 
-  const handleSubmitGrade = async () => {
-    if (!selectedAssessment?.id) return;
+  function closeRating() {
+    setSelected(null);
+  }
 
-    const punc = parseInt(punctuality);
-    const cont = parseInt(contributions);
-    const comm = parseInt(commitment);
-    const att = parseInt(attitude);
-
-    if (isNaN(punc) || isNaN(cont) || isNaN(comm) || isNaN(att)) {
-      setSnackbarMessage('Por favor ingresa valores numéricos válidos');
-      return;
-    }
-
-    if (punc < 0 || punc > 5 || cont < 0 || cont > 5 || comm < 0 || comm > 5 || att < 0 || att > 5) {
-      setSnackbarMessage('Los valores deben estar entre 0 y 5');
-      return;
-    }
-
+  async function onSaveRating(
+    assessmentId: string,
+    punctuality: number,
+    contributions: number,
+    commitment: number,
+    attitude: number
+  ) {
+    setSaving(true);
     try {
-      await gradeAssessment(selectedAssessment.id, {
-        punctuality: punc,
-        contributions: cont,
-        commitment: comm,
-        attitude: att,
-      });
-      setSnackbarMessage('Calificación guardada exitosamente');
-      setGradeDialogVisible(false);
-      if (user?.id) {
-        loadAssessmentsByActivityAndRater(activityId, user.id);
+      const ok = await gradeAssessment(assessmentId, punctuality, contributions, commitment, attitude);
+      if (ok) {
+        closeRating();
+        // recargar lista desde el context
+        await loadAssessmentsByActivityAndRater(activityId, currentUserId);
+      } else {
+        console.warn("gradeAssessment returned false");
       }
-    } catch (error) {
-      setSnackbarMessage('Error al guardar la calificación');
+    } catch (e) {
+      console.warn("Error grading assessment", e);
+    } finally {
+      setSaving(false);
     }
-  };
+  }
 
-  if (loading) {
+  function renderItem({ item }: { item: Assessment }) {
+    const name = userNames[item.toRate] ?? item.toRate;
+    const timeText = item.timeWin ?? "-";
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" />
-        <Text style={{ marginTop: 16 }}>Cargando evaluaciones...</Text>
-      </View>
+      <TouchableOpacity style={styles.item} onPress={() => openRating(item)}>
+        <View>
+          <Text style={styles.title}>To rate: {name}</Text>
+          <Text style={styles.subtitle}>Time: {timeText}</Text>
+        </View>
+        <Text style={styles.edit}>✎</Text>
+      </TouchableOpacity>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.header}>
-        <Text variant="headlineMedium" style={styles.title}>
-          Evaluaciones - {activityName}
-        </Text>
-        <Text variant="bodyMedium" style={styles.subtitle}>
-          Califica a tus compañeros de grupo
-        </Text>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.header}>Assessments</Text>
 
-      {assessments.length === 0 ? (
-        <View style={styles.centered}>
-          <Text variant="titleMedium">No hay compañeros para evaluar</Text>
-          <Text variant="bodySmall" style={{ marginTop: 8, textAlign: 'center' }}>
-            Las evaluaciones aparecerán cuando la actividad esté activa
-          </Text>
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator />
+        </View>
+      ) : list.length === 0 ? (
+        <View style={styles.center}>
+          <Text>No assessments found</Text>
         </View>
       ) : (
-        <FlatList
-          data={assessments}
-          keyExtractor={(item) => item.id!}
-          contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <Card style={styles.card}>
-              <Card.Content>
-                <View style={styles.cardHeader}>
-                  <View style={styles.cardInfo}>
-                    <Text variant="titleMedium" style={styles.cardTitle}>
-                      {userNames.get(item.toRate) || 'Cargando...'}
-                    </Text>
-                    <Text variant="bodySmall" style={styles.cardSubtitle}>
-                      {item.punctuality !== null
-                        ? `Calificado: Puntualidad ${item.punctuality}, Aportes ${item.contributions}, Compromiso ${item.commitment}, Actitud ${item.attitude}`
-                        : 'Sin calificar'}
-                    </Text>
-                  </View>
-                </View>
-              </Card.Content>
-              <Card.Actions>
-                <Button onPress={() => handleOpenGradeDialog(item)}>
-                  {item.punctuality !== null ? 'Editar' : 'Calificar'}
-                </Button>
-              </Card.Actions>
-            </Card>
-          )}
-        />
+        <FlatList data={list} keyExtractor={(i) => i.id ?? `${i.activityId}-${i.toRate}`} renderItem={renderItem} />
       )}
 
-      <Portal>
-        <Dialog visible={gradeDialogVisible} onDismiss={() => setGradeDialogVisible(false)}>
-          <Dialog.Title>Calificar estudiante</Dialog.Title>
-          <Dialog.Content>
-            <Text variant="bodySmall" style={{ marginBottom: 16 }}>
-              Califica cada aspecto de 0 a 5
-            </Text>
-            <TextInput
-              label="Puntualidad (0-5)"
-              value={punctuality}
-              onChangeText={setPunctuality}
-              keyboardType="numeric"
-              mode="outlined"
-              style={styles.input}
-            />
-            <TextInput
-              label="Aportes (0-5)"
-              value={contributions}
-              onChangeText={setContributions}
-              keyboardType="numeric"
-              mode="outlined"
-              style={styles.input}
-            />
-            <TextInput
-              label="Compromiso (0-5)"
-              value={commitment}
-              onChangeText={setCommitment}
-              keyboardType="numeric"
-              mode="outlined"
-              style={styles.input}
-            />
-            <TextInput
-              label="Actitud (0-5)"
-              value={attitude}
-              onChangeText={setAttitude}
-              keyboardType="numeric"
-              mode="outlined"
-              style={styles.input}
-            />
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setGradeDialogVisible(false)}>Cancelar</Button>
-            <Button onPress={handleSubmitGrade}>Guardar</Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+      {/* Floating action button: muestra estadisticas si la visibilidad es public */}
+      {list.length > 0 && list[0].visibility === "public" && (
+        <Pressable
+          style={styles.fab}
+          onPress={async () => {
+            // abrir bottom sheet con promedios (te dejo navegación o modal)
+            const avg = await getAverageRatings(activityId, currentUserId);
+            // mostramos modal simple con resultados:
+            navigation?.navigate?.("AssessmentsStatsScreen", { activityId });
+          }}
+        >
+          <Text style={styles.fabText}>📊</Text>
+        </Pressable>
+      )}
 
-      <Snackbar
-        visible={!!snackbarMessage}
-        onDismiss={() => setSnackbarMessage(null)}
-        duration={3000}
-      >
-        {snackbarMessage}
-      </Snackbar>
-    </View>
+      {/* Rating modal */}
+      <Modal visible={selected !== null} animationType="slide" transparent onRequestClose={closeRating}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modal}>
+            <AssessmentRatingModal
+              assessment={selected}
+              onClose={closeRating}
+              onSave={onSaveRating}
+              saving={saving}
+            />
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1, backgroundColor: "#fff" },
+  header: { fontSize: 18, fontWeight: "bold", padding: 12 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  item: { padding: 12, borderBottomWidth: 1, borderColor: "#eee", flexDirection: "row", justifyContent: "space-between" },
+  title: { fontWeight: "bold", fontSize: 16 },
+  subtitle: { color: "#666", marginTop: 4 },
+  edit: { fontSize: 18, color: "#666" },
+  fab: {
+    position: "absolute",
+    right: 16,
+    bottom: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#007AFF",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 4,
   },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  header: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  title: {
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    marginTop: 4,
-    opacity: 0.7,
-  },
-  listContent: {
-    padding: 16,
-  },
-  card: {
-    marginBottom: 12,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  cardInfo: {
-    flex: 1,
-  },
-  cardTitle: {
-    fontWeight: 'bold',
-  },
-  cardSubtitle: {
-    marginTop: 4,
-    opacity: 0.7,
-  },
-  input: {
-    marginBottom: 12,
-  },
+  fabText: { color: "#fff", fontSize: 24 },
+  modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.4)" },
+  modal: { backgroundColor: "#fff", borderTopLeftRadius: 12, borderTopRightRadius: 12 },
 });

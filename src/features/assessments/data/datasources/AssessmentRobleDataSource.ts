@@ -1,237 +1,225 @@
-import { ILocalPreferences } from "@/src/core/iLocalPreferences";
-import { Assessment } from "../../domain/entities/Assessment";
+/**
+ * @fileoverview Implementación del DataSource de assessments usando Roble API.
+ */
 
-const TABLE_NAME = "assessments";
+import { ILocalPreferences } from '@/src/core/iLocalPreferences';
+import { Assessment } from '../../domain/entities/Assessment';
+import { IAssessmentDataSource } from './IAssessmentDataSource';
 
-export class AssessmentRobleDataSource {
-  private baseUrl: string;
+const PROJECT_ID = process.env.EXPO_PUBLIC_ROBLE_PROJECT_ID;
+const BASE_URL = `https://roble-api.openlab.uninorte.edu.co/database/${PROJECT_ID}`;
+
+export class AssessmentRobleDataSource implements IAssessmentDataSource {
+  private readonly tableName = 'assessments';
+  private readonly baseUrl: string;
 
   constructor(private prefs: ILocalPreferences) {
-    const projectId = process.env.EXPO_PUBLIC_ROBLE_PROJECT_ID || "";
-    this.baseUrl = `https://roble-api.openlab.uninorte.edu.co/database/${projectId}`;
+    if (!PROJECT_ID) {
+      throw new Error('Missing EXPO_PUBLIC_ROBLE_PROJECT_ID env var for Roble DB');
+    }
+    this.baseUrl = BASE_URL;
   }
 
   private async getToken(): Promise<string> {
     const token = await this.prefs.retrieveData<string>('token');
-    if (!token) {
-      throw new Error('No token found for Roble DB access.');
-    }
+    if (!token) throw new Error('No token found for Roble DB access.');
     return token;
   }
 
-  async createAssessment(assessment: Assessment): Promise<Assessment | null> {
-    try {
-      const token = await this.getToken();
-      const url = `${this.baseUrl}/insert`;
-
-      const record = {
-        activity_id: assessment.activityId,
-        rater: assessment.rater,
-        to_rate: assessment.toRate,
-        time_win: assessment.timeWin,
-        visibility: assessment.visibility,
-        punctuality: assessment.punctuality,
-        contributions: assessment.contributions,
-        commitment: assessment.commitment,
-        attitude: assessment.attitude,
-      };
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json; charset=UTF-8",
-        },
-        body: JSON.stringify({
-          tableName: TABLE_NAME,
-          records: [record],
-        }),
-      });
-
-      if (!response.ok) {
-        console.error("Error creating assessment:", response.status);
-        return null;
-      }
-
-      const data = await response.json();
-      if (data.insertedRecords && data.insertedRecords.length > 0) {
-        const inserted = data.insertedRecords[0];
-        return new Assessment({
-          id: inserted._id,
-          activityId: inserted.activity_id,
-          rater: inserted.rater,
-          toRate: inserted.to_rate,
-          timeWin: inserted.time_win,
-          visibility: inserted.visibility,
-          punctuality: inserted.punctuality,
-          contributions: inserted.contributions,
-          commitment: inserted.commitment,
-          attitude: inserted.attitude,
-        });
-      }
-
-      return null;
-    } catch (error) {
-      console.error("Error in createAssessment:", error);
-      return null;
-    }
-  }
-
+  // -----------------------------------------------------------
+  // GET ASSESSMENTS BY ACTIVITY
+  // -----------------------------------------------------------
   async getAssessmentsByActivity(activityId: string): Promise<Assessment[]> {
     try {
       const token = await this.getToken();
-      const url = `${this.baseUrl}/read?tableName=${TABLE_NAME}&activity_id=${activityId}`;
+      const url = `${this.baseUrl}/read?tableName=${this.tableName}&activity_id=${activityId}`;
+
+      console.log('📄 Fetching assessments by activity:', url);
 
       const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json; charset=UTF-8",
-        },
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) {
-        console.error("Error fetching assessments:", response.status);
-        return [];
+
+      const text = await response.text();
+      console.log("📦 response:", text);
+
+      if (response.status === 200) {
+        const list = JSON.parse(text);
+        return list.map((e: any) => Assessment.fromJson(e));
       }
 
-      const data = await response.json();
-      return (data || []).map(
-        (item: any) =>
-          new Assessment({
-            id: item._id,
-            activityId: item.activity_id,
-            rater: item.rater,
-            toRate: item.to_rate,
-            timeWin: item.time_win,
-            visibility: item.visibility,
-            punctuality: item.punctuality,
-            contributions: item.contributions,
-            commitment: item.commitment,
-            attitude: item.attitude,
-          })
-      );
-    } catch (error) {
-      console.error("Error in getAssessmentsByActivity:", error);
+      return [];
+    } catch (e) {
+      console.error('❌ getAssessmentsByActivity error:', e);
       return [];
     }
   }
 
+  // -----------------------------------------------------------
+  // GET ASSESSMENTS BY ACTIVITY + RATER
+  // -----------------------------------------------------------
   async getAssessmentsByActivityAndRater(activityId: string, rater: string): Promise<Assessment[]> {
     try {
       const token = await this.getToken();
-      const url = `${this.baseUrl}/read?tableName=${TABLE_NAME}&activity_id=${activityId}&rater=${rater}`;
+      const url = `${this.baseUrl}/read?tableName=${this.tableName}&activity_id=${activityId}&rater=${rater}`;
+
+      console.log('📄 Fetch:', url);
 
       const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json; charset=UTF-8",
-        },
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) {
-        console.error("Error fetching assessments by rater:", response.status);
-        return [];
+
+      const text = await response.text();
+      if (response.status === 200) {
+        const list = JSON.parse(text);
+        return list.map((e: any) => Assessment.fromJson(e));
       }
 
-      const data = await response.json();
-      return (data || []).map(
-        (item: any) =>
-          new Assessment({
-            id: item._id,
-            activityId: item.activity_id,
-            rater: item.rater,
-            toRate: item.to_rate,
-            timeWin: item.time_win,
-            visibility: item.visibility,
-            punctuality: item.punctuality,
-            contributions: item.contributions,
-            commitment: item.commitment,
-            attitude: item.attitude,
-          })
-      );
-    } catch (error) {
-      console.error("Error in getAssessmentsByActivityAndRater:", error);
+      return [];
+    } catch (e) {
+      console.error('❌ getAssessmentsByActivityAndRater error:', e);
       return [];
     }
   }
 
-  async updateAssessment(id: string, updates: Partial<Assessment>): Promise<Assessment | null> {
+  // -----------------------------------------------------------
+  // GET ASSESSMENTS BY ACTIVITY + TO RATE
+  // -----------------------------------------------------------
+  async getAssessmentsByActivityAndToRate(activityId: string, toRate: string): Promise<Assessment[]> {
     try {
       const token = await this.getToken();
-      const url = `${this.baseUrl}/update`;
+      const url = `${this.baseUrl}/read?tableName=${this.tableName}&activity_id=${activityId}&to_rate=${toRate}`;
 
-      const updateFields: any = {};
-      if (updates.punctuality !== undefined) updateFields.punctuality = updates.punctuality;
-      if (updates.contributions !== undefined) updateFields.contributions = updates.contributions;
-      if (updates.commitment !== undefined) updateFields.commitment = updates.commitment;
-      if (updates.attitude !== undefined) updateFields.attitude = updates.attitude;
-      if (updates.timeWin !== undefined) updateFields.time_win = updates.timeWin;
-      if (updates.visibility !== undefined) updateFields.visibility = updates.visibility;
+      console.log('📄 Fetch:', url);
 
       const response = await fetch(url, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json; charset=UTF-8",
-        },
-        body: JSON.stringify({
-          tableName: TABLE_NAME,
-          idColumn: "_id",
-          idValue: id,
-          updates: updateFields,
-        }),
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) {
-        console.error("Error updating assessment:", response.status);
-        return null;
+      const text = await response.text();
+      if (response.status === 200) {
+        const list = JSON.parse(text);
+        return list.map((e: any) => Assessment.fromJson(e));
       }
 
-      const data = await response.json();
-      if (data.updatedRecord) {
-        const updated = data.updatedRecord;
-        return new Assessment({
-          id: updated._id,
-          activityId: updated.activity_id,
-          rater: updated.rater,
-          toRate: updated.to_rate,
-          timeWin: updated.time_win,
-          visibility: updated.visibility,
-          punctuality: updated.punctuality,
-          contributions: updated.contributions,
-          commitment: updated.commitment,
-          attitude: updated.attitude,
-        });
-      }
-
-      return null;
-    } catch (error) {
-      console.error("Error in updateAssessment:", error);
-      return null;
+      return [];
+    } catch (e) {
+      console.error('❌ getAssessmentsByActivityAndToRate error:', e);
+      return [];
     }
   }
 
-  async deleteAssessment(id: string): Promise<boolean> {
+  // -----------------------------------------------------------
+  // GET ASSESSMENTS BY TO_RATE
+  // -----------------------------------------------------------
+  async getAssessmentsByToRate(toRate: string): Promise<Assessment[]> {
     try {
       const token = await this.getToken();
-      const url = `${this.baseUrl}/delete`;
+      const url = `${this.baseUrl}/read?tableName=${this.tableName}&to_rate=${toRate}`;
+
+      console.log('📄 Fetch:', url);
 
       const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json; charset=UTF-8",
-        },
-        body: JSON.stringify({
-          tableName: TABLE_NAME,
-          idColumn: "_id",
-          idValue: id,
-        }),
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      return response.ok;
-    } catch (error) {
-      console.error("Error in deleteAssessment:", error);
+      const text = await response.text();
+      if (response.status === 200) {
+        const list = JSON.parse(text);
+        return list.map((e: any) => Assessment.fromJson(e));
+      }
+
+      return [];
+    } catch (e) {
+      console.error('❌ getAssessmentsByToRate error:', e);
+      return [];
+    }
+  }
+
+  // -----------------------------------------------------------
+  // CREATE ASSESSMENT
+  // -----------------------------------------------------------
+  async createAssessment(assessment: Assessment): Promise<boolean> {
+    try {
+      const token = await this.getToken();
+
+      const bodyPayload = {
+        tableName: this.tableName,
+        records: [assessment.toJson()],
+      };
+
+      console.log("📝 Creating assessment:", bodyPayload);
+
+      const response = await fetch(`${this.baseUrl}/insert`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bodyPayload),
+      });
+
+      const text = await response.text();
+      console.log("📡 response:", text);
+
+      if (response.status === 200 || response.status === 201) {
+        const data = JSON.parse(text);
+        return data.inserted && data.inserted.length > 0;
+      }
+
+      return false;
+    } catch (e) {
+      console.error("❌ createAssessment error:", e);
+      return false;
+    }
+  }
+
+  // -----------------------------------------------------------
+  // GRADE ASSESSMENT
+  // -----------------------------------------------------------
+  async gradeAssessment(
+    assessmentId: string,
+    punctuality: number,
+    contributions: number,
+    commitment: number,
+    attitude: number
+  ): Promise<boolean> {
+    try {
+      const token = await this.getToken();
+
+      const bodyPayload = {
+        tableName: this.tableName,
+        idColumn: "_id",
+        idValue: assessmentId,
+        updates: {
+          punctuality,
+          contributions,
+          commitment,
+          attitude,
+        },
+      };
+
+      console.log("📝 Updating assessment:", assessmentId);
+
+      const response = await fetch(`${this.baseUrl}/update`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(bodyPayload),
+      });
+
+      if (response.status === 200) return true;
+
+      console.error("❌ gradeAssessment failed:", response.status);
+      return false;
+    } catch (e) {
+      console.error("❌ gradeAssessment error:", e);
       return false;
     }
   }

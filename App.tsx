@@ -33,21 +33,20 @@ export default function App() {
 
   return (
 
-    <PaperProvider theme={theme}>
-      <DIProvider>
-        <AuthProvider>
-          {/* CourseProvider debe ir primero porque JoinCourseDialog lo usa */}
-          <CourseProvider> 
-                {}
-                <UserCourseProvider>
-                  <NavigationContainer theme={navigationTheme}>
-                    <AuthFlow />
-                  </NavigationContainer>
-                </UserCourseProvider>
-          </CourseProvider>
-        </AuthProvider>
-      </DIProvider>
-    </PaperProvider>
+<PaperProvider theme={theme}>
+  <DIProvider>
+    <AuthProvider>
+      <CourseProvider>
+        <UserCourseProvider>
+          <NavigationContainer theme={navigationTheme}>
+            <AuthFlow />
+          </NavigationContainer>
+        </UserCourseProvider>
+      </CourseProvider>
+    </AuthProvider>
+  </DIProvider>
+</PaperProvider>
+
 
   );
 }
