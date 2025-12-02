@@ -50,20 +50,26 @@ import { UserGroupRepositoryImpl } from "@/src/features/user_groups/data/reposit
 import { UserGroupUseCases } from "@/src/features/user_groups/domain/usecases/UserGroupUseCases";
 // ---------------------------------------------------
 
+// --- CLASES CONCRETAS NECESARIAS PARA ACTIVITIES ---
+import { ActivityRobleDataSource } from "@/src/features/activities/data/datasources/activity_roble_source";
+import { ActivityRepositoryImpl } from "@/src/features/activities/data/repositories/activity_repository";
+import { ActivityUseCases } from "@/src/features/activities/domain/usecases/activity_usecase";
+// ---------------------------------------------------
+
 
 const DIContext = createContext<Container | null>(null);
 
 export function DIProvider({ children }: { children: React.ReactNode }) {
-    // useMemo asegura que la creación del contenedor solo se ejecute una vez
-    const container = useMemo(() => {
-        const c = new Container();
+    // useMemo asegura que la creación del contenedor solo se ejecute una vez
+    const container = useMemo(() => {
+        const c = new Container();
 
-        // =======================================================
-        // 0. REGISTRO CORE: LOCAL PREFERENCES (DEBE IR PRIMERO)
-        // Esto soluciona el error "No provider for Symbol(LocalPrefs)"
-        // =======================================================
-        const localPrefsInstance = LocalPreferencesAsyncStorage.getInstance();
-        c.register(TOKENS.LocalPrefs, localPrefsInstance);
+        // =======================================================
+        // 0. REGISTRO CORE: LOCAL PREFERENCES (DEBE IR PRIMERO)
+        // Esto soluciona el error "No provider for Symbol(LocalPrefs)"
+        // =======================================================
+        const localPrefsInstance = LocalPreferencesAsyncStorage.getInstance();
+        c.register(TOKENS.LocalPrefs, localPrefsInstance);
         
         // Resolvemos la instancia para usarla en los siguientes constructores
         const prefs = c.resolve(TOKENS.LocalPrefs) as ILocalPreferences;
@@ -88,30 +94,30 @@ export function DIProvider({ children }: { children: React.ReactNode }) {
             .register(TOKENS.SignupUC, new SignupUseCase(authRepo))
             .register(TOKENS.LogoutUC, new LogoutUseCase(authRepo))
             .register(TOKENS.GetCurrentUserUC, new GetCurrentUserUseCase(authRepo));
-        // ==========================================
-        // 2. REGISTROS DE CURSOS 
-        // ==========================================
-        
-        // Crear DataSource (necesita 'prefs' ya resuelta y registrada)
-        const courseDS = new CourseRobleDataSource(prefs); 
-        
-        // Crear Repository
-        const courseRepo = new CourseRepository(courseDS);
-        
-        // Instancia única de la clase contenedora de Casos de Uso
-        const courseUCInstance = new CourseUseCases(courseRepo);
+        // ==========================================
+        // 2. REGISTROS DE CURSOS 
+        // ==========================================
+        
+        // Crear DataSource (necesita 'prefs' ya resuelta y registrada)
+        const courseDS = new CourseRobleDataSource(prefs); 
+        
+        // Crear Repository
+        const courseRepo = new CourseRepository(courseDS);
+        
+        // Instancia única de la clase contenedora de Casos de Uso
+        const courseUCInstance = new CourseUseCases(courseRepo);
 
-        c.register(TOKENS.CourseRemoteDS, courseDS)
-            .register(TOKENS.CourseRepo, courseRepo)
-            
-            // Registramos las funciones individuales usando .bind() para mantener el contexto 'this'
-            .register(TOKENS.CreateCourseUC, courseUCInstance.createCourse.bind(courseUCInstance))
-            .register(TOKENS.UpdateCourseUC, courseUCInstance.updateCourse.bind(courseUCInstance))
-            .register(TOKENS.DeleteCourseUC, courseUCInstance.deleteCourse.bind(courseUCInstance))
-            .register(TOKENS.ListCoursesByTeacherUC, courseUCInstance.listCoursesByTeacher.bind(courseUCInstance))
-            .register(TOKENS.GetCourseByIdUC, courseUCInstance.getCourse.bind(courseUCInstance))
-            .register(TOKENS.GetCourseByCodeUC, courseUCInstance.getCourseByCode.bind(courseUCInstance))
-            .register(TOKENS.CanCreateMoreUC, courseUCInstance.canCreateMore.bind(courseUCInstance));
+        c.register(TOKENS.CourseRemoteDS, courseDS)
+            .register(TOKENS.CourseRepo, courseRepo)
+            
+            // Registramos las funciones individuales usando .bind() para mantener el contexto 'this'
+            .register(TOKENS.CreateCourseUC, courseUCInstance.createCourse.bind(courseUCInstance))
+            .register(TOKENS.UpdateCourseUC, courseUCInstance.updateCourse.bind(courseUCInstance))
+            .register(TOKENS.DeleteCourseUC, courseUCInstance.deleteCourse.bind(courseUCInstance))
+            .register(TOKENS.ListCoursesByTeacherUC, courseUCInstance.listCoursesByTeacher.bind(courseUCInstance))
+            .register(TOKENS.GetCourseByIdUC, courseUCInstance.getCourse.bind(courseUCInstance))
+            .register(TOKENS.GetCourseByCodeUC, courseUCInstance.getCourseByCode.bind(courseUCInstance))
+            .register(TOKENS.CanCreateMoreUC, courseUCInstance.canCreateMore.bind(courseUCInstance));
 
         // ==========================================
         // 3. REGISTROS DE USER_COURSES
@@ -165,14 +171,25 @@ export function DIProvider({ children }: { children: React.ReactNode }) {
         );
         c.register(TOKENS.CreateCategoryWithGroupsUC, createCategoryWithGroupsUC);
 
-        return c;
-    }, []);
+        // ==========================================
+        // 7. REGISTROS DE ACTIVITIES
+        // ==========================================
+        const activityDS = new ActivityRobleDataSource(prefs);
+        const activityRepo = new ActivityRepositoryImpl(activityDS);
+        const activityUseCases = new ActivityUseCases(activityRepo);
 
-    return <DIContext.Provider value={container}>{children}</DIContext.Provider>;
+        c.register(TOKENS.ActivityDataSource, activityDS)
+            .register(TOKENS.ActivityRepo, activityRepo)
+            .register(TOKENS.ActivityUseCases, activityUseCases);
+
+        return c;
+    }, []);
+
+    return <DIContext.Provider value={container}>{children}</DIContext.Provider>;
 }
 
 export function useDI() {
-    const c = useContext(DIContext);
-    if (!c) throw new Error("DIProvider missing");
-    return c;
+    const c = useContext(DIContext);
+    if (!c) throw new Error("DIProvider missing");
+    return c;
 }

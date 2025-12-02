@@ -56,13 +56,11 @@ export const CategoriesListPage = ({ courseId, courseName, teacherId }: Categori
 
   const handleCategoryPress = (category: Category) => {
     console.log('📂 Categoría seleccionada:', category.name);
-    navigation.navigate('GroupsList', {
+    navigation.navigate('CategoryDetail', {
       categoryId: category.id,
       categoryName: category.name,
       maxGroupSize: category.maxGroupSize,
       teacherId,
-      courseId,
-      courseName,
     });
   };
 

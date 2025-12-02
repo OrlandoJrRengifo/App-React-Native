@@ -4,11 +4,10 @@ import React from "react";
 import { useAuth } from "./features/auth/presentation/context/authContext";
 import LoginScreen from "./features/auth/presentation/screens/LoginScreen";
 import SignupScreen from "./features/auth/presentation/screens/SignupScreen";
-// Importamos el CourseDashboard, asumiendo esta ruta
+import { CategoryDetailPage } from "./features/categories/presentation/screens/CategoryTabsPage";
 import { CourseDashboardScreen } from "./features/courses/presentation/screens/CourseDashboard";
 import { CourseDetailPage } from "./features/courses/presentation/screens/CourseDetailPage";
 import { GroupsListScreen } from "./features/groups/presentation/screens/GroupsListScreen";
-
 
 const Stack = createStackNavigator();
 
@@ -30,6 +29,10 @@ export default function AuthFlow() {
         <Stack.Screen 
           name="CourseDetail" 
           component={CourseDetailPage} 
+        />
+        <Stack.Screen 
+          name="CategoryDetail" 
+          component={CategoryDetailPage} 
         />
         <Stack.Screen 
           name="GroupsList" 
