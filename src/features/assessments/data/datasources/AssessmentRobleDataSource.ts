@@ -4,13 +4,9 @@ import { Assessment } from "../../domain/entities/Assessment";
 const TABLE_NAME = "assessments";
 
 export class AssessmentRobleDataSource {
-  private baseUrl: string = "";
+  private baseUrl: string;
 
   constructor(private prefs: ILocalPreferences) {
-    this.initializeBaseUrl();
-  }
-
-  private async initializeBaseUrl() {
     const projectId = process.env.EXPO_PUBLIC_ROBLE_PROJECT_ID || "";
     this.baseUrl = `https://roble-api.openlab.uninorte.edu.co/database/${projectId}`;
   }
@@ -173,7 +169,7 @@ export class AssessmentRobleDataSource {
       if (updates.visibility !== undefined) updateFields.visibility = updates.visibility;
 
       const response = await fetch(url, {
-        method: "POST",
+        method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json; charset=UTF-8",
