@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Card, DataTable, Text, useTheme } from 'react-native-paper';
-import { RouteProp, useRoute } from '@react-navigation/native';
-import { useAssessments } from '../context/AssessmentContext';
-import { Assessment } from '../../domain/entities/Assessment';
 import { useDI } from '@/src/core/di/DIProvider';
 import { TOKENS } from '@/src/core/di/tokens';
 import { FakeUserUseCase } from '@/src/features/fake_users/domain/usecases/FakeUserUseCase';
+import { RouteProp, useRoute } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import { FlatList, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Card, DataTable, Text, useTheme } from 'react-native-paper';
+import { useAssessments } from '../context/AssessmentContext';
 
 type AssessmentStatsRouteParams = {
   AssessmentStats: {

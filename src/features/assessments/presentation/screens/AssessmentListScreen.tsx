@@ -1,24 +1,23 @@
+import { useDI } from '@/src/core/di/DIProvider';
+import { TOKENS } from '@/src/core/di/tokens';
+import { useAuth } from '@/src/features/auth/presentation/context/authContext';
+import { FakeUserUseCase } from '@/src/features/fake_users/domain/usecases/FakeUserUseCase';
+import { RouteProp, useRoute } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import {
-  ActivityIndicator,
-  Button,
-  Card,
-  Dialog,
-  Portal,
-  Snackbar,
-  Text,
-  TextInput,
-  useTheme,
+    ActivityIndicator,
+    Button,
+    Card,
+    Dialog,
+    Portal,
+    Snackbar,
+    Text,
+    TextInput,
+    useTheme,
 } from 'react-native-paper';
-import { RouteProp, useRoute } from '@react-navigation/native';
-import { useAssessments } from '../context/AssessmentContext';
-import { useAuth } from '@/src/features/auth/presentation/context/authContext';
 import { Assessment } from '../../domain/entities/Assessment';
-import { useDI } from '@/src/core/di/DIProvider';
-import { TOKENS } from '@/src/core/di/tokens';
-import { FakeUserUseCase } from '@/src/features/fake_users/domain/usecases/FakeUserUseCase';
-import { FakeUser } from '@/src/features/fake_users/domain/entities/FakeUser';
+import { useAssessments } from '../context/AssessmentContext';
 
 type AssessmentListRouteParams = {
   AssessmentList: {

@@ -1,19 +1,18 @@
 import { ILocalPreferences } from "@/src/core/iLocalPreferences";
 import { Assessment } from "../../domain/entities/Assessment";
 
-const ROBLE_API_URL = "https://roble-api.openlab.uninorte.edu.co/database";
 const TABLE_NAME = "assessments";
 
 export class AssessmentRobleDataSource {
-  private projectId: string | null = null;
+  private baseUrl: string = "";
 
-  constructor(private prefs: ILocalPreferences) {}
+  constructor(private prefs: ILocalPreferences) {
+    this.initializeBaseUrl();
+  }
 
-  private async getProjectId(): Promise<string> {
-    if (!this.projectId) {
-      this.projectId = process.env.EXPO_PUBLIC_ROBLE_PROJECT_ID || "";
-    }
-    return this.projectId;
+  private async initializeBaseUrl() {
+    const projectId = process.env.EXPO_PUBLIC_ROBLE_PROJECT_ID || "";
+    this.baseUrl = `https://roble-api.openlab.uninorte.edu.co/database/${projectId}`;
   }
 
   private async getToken(): Promise<string> {
@@ -26,9 +25,8 @@ export class AssessmentRobleDataSource {
 
   async createAssessment(assessment: Assessment): Promise<Assessment | null> {
     try {
-      const projectId = await this.getProjectId();
       const token = await this.getToken();
-      const url = `${ROBLE_API_URL}/${projectId}/insert`;
+      const url = `${this.baseUrl}/insert`;
 
       const record = {
         activity_id: assessment.activityId,
@@ -85,9 +83,8 @@ export class AssessmentRobleDataSource {
 
   async getAssessmentsByActivity(activityId: string): Promise<Assessment[]> {
     try {
-      const projectId = await this.getProjectId();
       const token = await this.getToken();
-      const url = `${ROBLE_API_URL}/${projectId}/read?tableName=${TABLE_NAME}&activity_id=${activityId}`;
+      const url = `${this.baseUrl}/read?tableName=${TABLE_NAME}&activity_id=${activityId}`;
 
       const response = await fetch(url, {
         method: "GET",
@@ -125,9 +122,8 @@ export class AssessmentRobleDataSource {
 
   async getAssessmentsByActivityAndRater(activityId: string, rater: string): Promise<Assessment[]> {
     try {
-      const projectId = await this.getProjectId();
       const token = await this.getToken();
-      const url = `${ROBLE_API_URL}/${projectId}/read?tableName=${TABLE_NAME}&activity_id=${activityId}&rater=${rater}`;
+      const url = `${this.baseUrl}/read?tableName=${TABLE_NAME}&activity_id=${activityId}&rater=${rater}`;
 
       const response = await fetch(url, {
         method: "GET",
@@ -165,9 +161,8 @@ export class AssessmentRobleDataSource {
 
   async updateAssessment(id: string, updates: Partial<Assessment>): Promise<Assessment | null> {
     try {
-      const projectId = await this.getProjectId();
       const token = await this.getToken();
-      const url = `${ROBLE_API_URL}/${projectId}/update`;
+      const url = `${this.baseUrl}/update`;
 
       const updateFields: any = {};
       if (updates.punctuality !== undefined) updateFields.punctuality = updates.punctuality;
@@ -222,9 +217,8 @@ export class AssessmentRobleDataSource {
 
   async deleteAssessment(id: string): Promise<boolean> {
     try {
-      const projectId = await this.getProjectId();
       const token = await this.getToken();
-      const url = `${ROBLE_API_URL}/${projectId}/delete`;
+      const url = `${this.baseUrl}/delete`;
 
       const response = await fetch(url, {
         method: "POST",
