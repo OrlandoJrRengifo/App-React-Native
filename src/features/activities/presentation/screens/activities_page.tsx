@@ -126,7 +126,7 @@ export const ActivitiesListPage = () => {
   const handleActivateConfirm = async () => {
     if (!activityToActivate?.id) return;
     try {
-      const activated = await activateActivity(activityToActivate.id);
+      const activated = await activateActivity(activityToActivate.id, categoryId);
       if (!activated) {
         setSnackbarMessage('No se pudo activar la actividad');
         return;

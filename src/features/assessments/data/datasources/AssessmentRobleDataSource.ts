@@ -16,9 +16,18 @@ export class AssessmentRobleDataSource {
     return this.projectId;
   }
 
+  private async getToken(): Promise<string> {
+    const token = await this.prefs.retrieveData<string>('token');
+    if (!token) {
+      throw new Error('No token found for Roble DB access.');
+    }
+    return token;
+  }
+
   async createAssessment(assessment: Assessment): Promise<Assessment | null> {
     try {
       const projectId = await this.getProjectId();
+      const token = await this.getToken();
       const url = `${ROBLE_API_URL}/${projectId}/insert`;
 
       const record = {
@@ -35,7 +44,10 @@ export class AssessmentRobleDataSource {
 
       const response = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json; charset=UTF-8",
+        },
         body: JSON.stringify({
           tableName: TABLE_NAME,
           records: [record],
@@ -74,9 +86,16 @@ export class AssessmentRobleDataSource {
   async getAssessmentsByActivity(activityId: string): Promise<Assessment[]> {
     try {
       const projectId = await this.getProjectId();
+      const token = await this.getToken();
       const url = `${ROBLE_API_URL}/${projectId}/read?tableName=${TABLE_NAME}&activity_id=${activityId}`;
 
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json; charset=UTF-8",
+        },
+      });
       if (!response.ok) {
         console.error("Error fetching assessments:", response.status);
         return [];
@@ -107,9 +126,16 @@ export class AssessmentRobleDataSource {
   async getAssessmentsByActivityAndRater(activityId: string, rater: string): Promise<Assessment[]> {
     try {
       const projectId = await this.getProjectId();
+      const token = await this.getToken();
       const url = `${ROBLE_API_URL}/${projectId}/read?tableName=${TABLE_NAME}&activity_id=${activityId}&rater=${rater}`;
 
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json; charset=UTF-8",
+        },
+      });
       if (!response.ok) {
         console.error("Error fetching assessments by rater:", response.status);
         return [];
@@ -140,6 +166,7 @@ export class AssessmentRobleDataSource {
   async updateAssessment(id: string, updates: Partial<Assessment>): Promise<Assessment | null> {
     try {
       const projectId = await this.getProjectId();
+      const token = await this.getToken();
       const url = `${ROBLE_API_URL}/${projectId}/update`;
 
       const updateFields: any = {};
@@ -152,7 +179,10 @@ export class AssessmentRobleDataSource {
 
       const response = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json; charset=UTF-8",
+        },
         body: JSON.stringify({
           tableName: TABLE_NAME,
           idColumn: "_id",
@@ -193,11 +223,15 @@ export class AssessmentRobleDataSource {
   async deleteAssessment(id: string): Promise<boolean> {
     try {
       const projectId = await this.getProjectId();
+      const token = await this.getToken();
       const url = `${ROBLE_API_URL}/${projectId}/delete`;
 
       const response = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json; charset=UTF-8",
+        },
         body: JSON.stringify({
           tableName: TABLE_NAME,
           idColumn: "_id",
