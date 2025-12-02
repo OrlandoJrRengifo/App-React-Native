@@ -180,7 +180,7 @@ export const ActivitiesListPage = () => {
         </View>
       ) : (
         <FlatList
-          data={activities}
+          data={activities.filter(a=> isOwner || a.activated)}
           keyExtractor={(item) => item.id!}
           renderItem={({ item }) => (
             <Card style={styles.card} onPress={() => setSnackbarMessage('Funcionalidad de assessments en desarrollo')}>
