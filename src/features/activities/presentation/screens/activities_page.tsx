@@ -183,7 +183,25 @@ export const ActivitiesListPage = () => {
           data={activities.filter(a=> isOwner || a.activated)}
           keyExtractor={(item) => item.id!}
           renderItem={({ item }) => (
-            <Card style={styles.card} onPress={() => setSnackbarMessage('Funcionalidad de assessments en desarrollo')}>
+            <Card 
+              style={styles.card} 
+              onPress={() => {
+                if (isOwner) {
+                  // Teacher sees stats
+                  navigation.navigate('AssessmentStats', {
+                    activityId: item.id,
+                    activityName: item.name,
+                    courseId: categoryId,
+                  });
+                } else {
+                  // Student sees list to grade peers
+                  navigation.navigate('AssessmentList', {
+                    activityId: item.id,
+                    activityName: item.name,
+                  });
+                }
+              }}
+            >
               <Card.Content>
                 <View style={styles.cardHeader}>
                   <View style={styles.cardInfo}>

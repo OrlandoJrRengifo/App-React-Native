@@ -5,6 +5,7 @@ import { Appbar, useTheme } from 'react-native-paper';
 import { SceneMap, TabBar, TabView } from 'react-native-tab-view';
 import { ActivityProvider } from '../../../activities/presentation/context/activityContext';
 import { ActivitiesListPage } from '../../../activities/presentation/screens/activities_page';
+import { AssessmentProvider } from '../../../assessments/presentation/context/AssessmentContext';
 import { CategoryProvider } from '../../../categories/presentation/context/CategoryContext';
 import { GroupProvider } from '../../../groups/presentation/context/GroupContext';
 import { GroupsListPage } from '../../../groups/presentation/screens/GroupsListPage';
@@ -56,33 +57,35 @@ export const CategoryDetailPage = () => {
   return (
     <CategoryProvider>
       <ActivityProvider>
-        <GroupProvider>
-          <UserGroupProvider>
-            <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-              <Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
-                <Appbar.BackAction onPress={() => navigation.goBack()} color="#fff" />
-                <Appbar.Content 
-                  title={categoryName} 
-                  titleStyle={{ color: '#fff', fontWeight: 'bold' }} 
-                />
-              </Appbar.Header>
-              <TabView
-                navigationState={{ index, routes }}
-                renderScene={renderScene}
-                onIndexChange={setIndex}
-                renderTabBar={props => (
-                  <TabBar 
-                    {...props} 
-                    indicatorStyle={{ backgroundColor: theme.colors.primary }}
-                    style={{ backgroundColor: theme.colors.surface }}
-                    activeColor={theme.colors.primary}
-                    inactiveColor={theme.colors.onSurfaceVariant}
+        <AssessmentProvider>
+          <GroupProvider>
+            <UserGroupProvider>
+              <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+                <Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
+                  <Appbar.BackAction onPress={() => navigation.goBack()} color="#fff" />
+                  <Appbar.Content 
+                    title={categoryName} 
+                    titleStyle={{ color: '#fff', fontWeight: 'bold' }} 
                   />
-                )}
-              />
-            </View>
-          </UserGroupProvider>
-        </GroupProvider>
+                </Appbar.Header>
+                <TabView
+                  navigationState={{ index, routes }}
+                  renderScene={renderScene}
+                  onIndexChange={setIndex}
+                  renderTabBar={props => (
+                    <TabBar 
+                      {...props} 
+                      indicatorStyle={{ backgroundColor: theme.colors.primary }}
+                      style={{ backgroundColor: theme.colors.surface }}
+                      activeColor={theme.colors.primary}
+                      inactiveColor={theme.colors.onSurfaceVariant}
+                    />
+                  )}
+                />
+              </View>
+            </UserGroupProvider>
+          </GroupProvider>
+        </AssessmentProvider>
       </ActivityProvider>
     </CategoryProvider>
   );
